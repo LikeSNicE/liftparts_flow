@@ -1,25 +1,29 @@
 @import "tailwindcss";
+
+@layer theme, base, components, utilities;
+
 @import "tailwindcss-primeui";
 
-@layer theme, base, primevue;
 
-/* CSS Reset */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
-html {
-  -webkit-text-size-adjust: 100%;
-  text-size-adjust: 100%;
-}
 
-body {
-  min-height: 100vh;
-  line-height: inherit;
+@layer base {
+  /* CSS Reset */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100vh;
+    line-height: inherit;
+  }
 }
 
 h1,
@@ -50,7 +54,6 @@ iframe,
 embed,
 object {
   display: block;
-  vertical-align: middle;
 } 
 
 img,
@@ -106,6 +109,29 @@ table {
 
   letter-spacing: 0.18px;
   color-scheme: light dark;
+}
+
+@theme{
+  --title: #1e293b;
+  --bg: #f1f5f9;
+  --text: #475569;
+
+  --blue: #2563eb;
+  --blue-bg: #dbeafe;
+
+  --purple: #7e22ce;
+  --purple-bg: #f3e8ff;
+
+  --border: #94a3b8;
+
+  --white: #fff;
+
+  --red: #dc2626;
+
+  --orange: #d97706;
+
+  --green: #16a34a;
+  --placeholder: #94a3b8;
 }
 
 body {

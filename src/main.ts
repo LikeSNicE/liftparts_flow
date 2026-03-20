@@ -5,6 +5,8 @@ import { router } from "./router/router";
 import { createPinia } from "pinia";
 import PrimeVue from "primevue/config";
 import Aura from "@primeuix/themes/aura";
+import "primeicons/primeicons.css";
+
 
 const pinia = createPinia();
 const app = createApp(App);
@@ -12,6 +14,9 @@ const app = createApp(App);
 app.use(PrimeVue, {
   theme: {
     preset: Aura,
+    options: {
+      darkModeSelector: 'none',
+    },
   },
 });
 
