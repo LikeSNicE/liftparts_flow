@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { api } from "@/service/apiInstance";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { useAuthStore } from "./useAuthStore";

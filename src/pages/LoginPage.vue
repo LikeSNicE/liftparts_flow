@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button, InputText, FloatLabel } from "primevue";
+import { Button, InputText } from "primevue";
 import { useLoginStore } from "@/stores/useLoginStore";
 import LogoIcon from "@/components/LogoIcon.vue";
 

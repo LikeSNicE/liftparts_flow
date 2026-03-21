@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Avatar, Button } from "primevue";
+import { Button } from "primevue";
 import LogoIcon from "./LogoIcon.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { router } from "@/router/router";

@@ -1,14 +1,36 @@
 <script setup lang="ts">
 import SideBar from "@/components/SideBar.vue";
-import { RouterView } from "vue-router";
+import { RouterView, useRoute } from "vue-router";
 import Header from "@/components/Header.vue";
+import { computed, ref, provide } from "vue";
+
+const route = useRoute();
+
+// Ref для хранения метода из EmployeesPage
+const openAddEmployeeFn = ref<(() => void) | null>(null);
+
+// Предоставляем функцию для регистрации метода
+provide("registerOpenAddEmployee", (fn: () => void) => {
+  openAddEmployeeFn.value = fn;
+});
+
+// Обработчик кнопки из Header
+const handleAddEmployee = () => {
+  openAddEmployeeFn.value?.();
+};
+
+// Показывать кнопку только на странице сотрудников
+const showAddButton = computed(() => route.path === "/users");
 </script>
 
 <template>
   <div class="home-layout">
     <SideBar />
 
-    <Header />
+    <Header 
+      :show-add-button="showAddButton"
+      @add-employee="handleAddEmployee"
+    />
     <div class="content">
       <router-view></router-view>
     </div>
