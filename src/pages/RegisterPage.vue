@@ -2,7 +2,8 @@
 import { Form } from "@primevue/forms";
 import { Button, InputText, Select } from "primevue";
 import { ref } from "vue";
-import { useRegisterStore } from "@/stores/RegisterStore";
+import { useRegisterStore } from "@/stores/useRegisterStore";
+import LogoIcon from "@/components/LogoIcon.vue";
 
 const registerStore = useRegisterStore();
 </script>
@@ -11,16 +12,14 @@ const registerStore = useRegisterStore();
   <div
     class="flex flex-col! items-center! justify-center! n bg-white! max-w-lg! w-full! p-8! rounded-2xl! shadow-2xl!"
   >
-    <picture>
-      <img src="/logo.svg" />
-    </picture>
+    <LogoIcon/>
 
     <h4 class="text-heading!">Регистрация сотрудника</h4>
     <p class="text-sm!">Заполните данные для доступа к системе</p>
 
     <form
       @submit.prevent="registerStore.registerUser()"
-      class="card flex flex-col justify-center gap-4 w-full! mt-6!"
+      class="card flex flex-col justify-center gap-4 w-full! mt-8!"
     >
       <div class="flex gap-4">
         <div class="flex flex-col gap-2 w-1/2">

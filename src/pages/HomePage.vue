@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { InputText, Button } from "primevue";
 import SideBar from "@/components/SideBar.vue";
 import { RouterView } from "vue-router";
 import Header from "@/components/Header.vue";

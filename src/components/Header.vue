@@ -3,7 +3,7 @@ import { Button } from "primevue";
 </script>
 
 <template>
-  <header class="header! py-2 px-4 bg-(--white) flex items-center justify-between border-b border-(--border)">
+  <header class="header! py-2 px-4 bg-(--white) flex items-center justify-between border-b border-(--border) sticky top-0">
     <h5>Заголовок</h5>
 
     <Button
