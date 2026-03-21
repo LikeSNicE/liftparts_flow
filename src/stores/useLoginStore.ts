@@ -4,10 +4,12 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useUserStore } from "./useUserStore";
 
 export const useLoginStore = defineStore("login", () => {
   const router = useRouter();
   const authStore = useAuthStore();
+  const userStore = useUserStore();
 
   const email = ref("");
   const password = ref("");
@@ -29,6 +31,7 @@ export const useLoginStore = defineStore("login", () => {
       if (status === 200 || status === 201) {
         authStore.setToken(data.token);
         reset();
+        await userStore.getAuthUser();
         await router.push("/");
       } else {
         console.log(`Ошибка авторизации. ${statusText}`);

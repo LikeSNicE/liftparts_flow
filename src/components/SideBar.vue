@@ -1,5 +1,25 @@
+<script setup lang="ts">
+import { Avatar, Button } from "primevue";
+import LogoIcon from "./LogoIcon.vue";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { router } from "@/router/router";
+import { useUserStore } from "@/stores/useUserStore";
+import { storeToRefs } from "pinia";
+
+const authStore = useAuthStore();
+const userStore = useUserStore();
+
+const { userData } = storeToRefs(userStore);
+
+const handleLogout = () => {
+  authStore.clearToken();
+  userStore.clearUserData();
+  router.push({ name: "login" });
+};
+</script>
+
 <template>
-  <aside class="sidebar flex flex-col h-screen bg-white">
+  <aside class="sidebar flex flex-col h-screen bg-white sticky top-0">
     <!-- Header -->
     <div
       class="flex items-center gap-2 py-2 px-4 shrink-0 border-b border-r border-(--border)"
@@ -94,28 +114,27 @@
     >
       <router-link
         to="/profile"
-        class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+        class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors p-2"
       >
-        <Avatar
-          image="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
-          shape="circle"
-          size="normal"
-        />
+        <div>
+          <i class="pi pi-user" style="font-size: 1.5rem;"></i>
+        </div>
         <div class="flex flex-col">
-          <span class="font-bold text-sm text-(--title)">Amy Elsner</span>
-          <span class="text-xs text-gray-500">Administrator</span>
+          <span class="font-bold text-sm text-(--title)">{{
+            userData?.username
+          }}</span>
+          <span class="text-xs text-gray-500">{{ userData?.userrole }}</span>
         </div>
       </router-link>
 
-      <Button label="Выйти" severity="danger" />
+      <Button
+        @click="handleLogout"
+        label="Выйти из аккаунта"
+        severity="danger"
+      />
     </div>
   </aside>
 </template>
-
-<script setup lang="ts">
-import { Avatar, Button } from "primevue";
-import LogoIcon from "./LogoIcon.vue";
-</script>
 
 <style scoped>
 .sidebar {

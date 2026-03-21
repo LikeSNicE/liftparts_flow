@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Button, InputText } from "primevue";
-import { useLoginStore } from "@/stores/LoginStore";
+import { Button, InputText, FloatLabel } from "primevue";
+import { useLoginStore } from "@/stores/useLoginStore";
+import LogoIcon from "@/components/LogoIcon.vue";
 
 const loginStore = useLoginStore();
 </script>
@@ -9,16 +10,14 @@ const loginStore = useLoginStore();
   <div
     class="flex flex-col! items-center! justify-center! n bg-white! max-w-lg! w-full! p-8! rounded-2xl! shadow-2xl!"
   >
-    <picture>
-      <img src="/logo.svg" />
-    </picture>
+    <LogoIcon />
 
     <h4 class="text-heading!">LiftPartsFlow</h4>
     <p class="text-sm!">Вход в систему</p>
 
     <form
       @submit.prevent="loginStore.loginUser()"
-      class="card flex flex-col justify-center gap-4 w-full!"
+      class="card flex flex-col justify-center gap-4 w-full! mt-8!"
     >
       <div class="flex flex-col gap-2">
         <label for="username" class="text-sm!">Email</label>

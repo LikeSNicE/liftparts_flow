@@ -23,4 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
+# envoriments
+src/.env
+
+# Role-based components
+src/components/RoleGuard.vue
+src/components/RoleBasedView.vue

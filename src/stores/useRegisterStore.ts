@@ -3,14 +3,13 @@ import { api } from "@/service/apiInstance";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { getErrorMessage } from "@/utils/getErrorMessage";
-import { type userRegisterPayload } from "@/types/UserTypes";
-
+import { type userRegisterPayload, type UserRole } from "@/types/UserTypes";
 
 export const useRegisterStore = defineStore("register", () => {
   const email = ref("");
   const username = ref("");
   const lastname = ref("");
-  const userrole = ref("");
+  const userrole = ref<UserRole>("mechanic");
   const password = ref("");
 
   const roles = [
@@ -25,10 +24,9 @@ export const useRegisterStore = defineStore("register", () => {
     email.value = "";
     username.value = "";
     lastname.value = "";
-    userrole.value = "";
+    userrole.value = "mechanic";
     password.value = "";
-  }
-
+  };
 
   const registerUser = async () => {
     const userPayload: userRegisterPayload = {

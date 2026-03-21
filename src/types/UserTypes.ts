@@ -1,10 +1,13 @@
-export interface User {
+export interface UserI {
   id: number;
   username: string;
   lastname: string;
   email: string;
-  userrole: string;
+  userrole: UserRole;
   password: string;
 }
 
-export type userRegisterPayload = Omit<User, "id">;
+export type UserRole = "mechanic" | "admin" | "warehouse_operator";
+
+export type User = Omit<UserI, "password">;
+export type userRegisterPayload = Omit<UserI, "id">;
