@@ -49,6 +49,11 @@ const routes = [
             component: () => import("@/pages/EmployeesPage.vue"),
             meta: { requiresAuth: true, roles: ["admin"] },
           },
+          {
+            path: "/settings",
+            component: () => import("@/pages/SettingsPage.vue"),
+            meta: { requiresAuth: true },
+          },
         ],
       },
     ],

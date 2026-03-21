@@ -13,6 +13,7 @@ export const useLoginStore = defineStore("login", () => {
 
   const email = ref("");
   const password = ref("");
+  const loginError = ref(""); // Ошибка авторизации
 
   // Тестовый администратор для разработки
   const TEST_ADMIN = {
@@ -23,9 +24,12 @@ export const useLoginStore = defineStore("login", () => {
   const reset = () => {
     email.value = "";
     password.value = "";
+    loginError.value = "";
   };
 
   const loginUser = async () => {
+    loginError.value = "";
+
     // Проверка тестового администратора
     if (email.value === TEST_ADMIN.email && password.value === TEST_ADMIN.password) {
       authStore.setToken("test-admin-token");
@@ -56,9 +60,11 @@ export const useLoginStore = defineStore("login", () => {
         await userStore.getAuthUser();
         await router.push("/");
       } else {
+        loginError.value = "Неверный email или пароль";
         console.log(`Ошибка авторизации. ${statusText}`);
       }
     } catch (error: unknown) {
+      loginError.value = "Неверный email или пароль";
       const errorMessage = getErrorMessage(error);
       console.log(errorMessage);
     }
@@ -67,6 +73,7 @@ export const useLoginStore = defineStore("login", () => {
   return {
     email,
     password,
+    loginError,
     loginUser,
     reset,
   };

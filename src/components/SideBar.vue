@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { Button } from "primevue";
+import { ref } from "vue";
+import { OverlayPanel } from "primevue";
+import type { OverlayPanel as OverlayPanelType } from "primevue";
 import LogoIcon from "./LogoIcon.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { router } from "@/router/router";
@@ -11,7 +13,32 @@ const userStore = useUserStore();
 
 const { userData } = storeToRefs(userStore);
 
+// Выпадающее меню пользователя
+const userMenuOpen = ref(false);
+const op = ref<InstanceType<typeof OverlayPanelType> | null>();
+
+const toggleUserMenu = (event: Event) => {
+  op.value?.toggle(event);
+  userMenuOpen.value = !userMenuOpen.value;
+};
+
+const closeUserMenu = () => {
+  userMenuOpen.value = false;
+  op.value?.hide();
+};
+
+const goToProfile = () => {
+  closeUserMenu();
+  router.push("/settings");
+};
+
+const goToSettings = () => {
+  closeUserMenu();
+  router.push("/settings");
+};
+
 const handleLogout = () => {
+  closeUserMenu();
   authStore.clearToken();
   userStore.clearUserData();
   router.push({ name: "login" });
@@ -97,41 +124,59 @@ const handleLogout = () => {
             <span class="font-medium">Сотрудники</span>
           </router-link>
         </li>
-        <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
-        >
-          <router-link to="/settings" class="flex items-center gap-3">
-            <i class="pi pi-cog"></i>
-            <span class="font-medium">Настройки</span>
-          </router-link>
-        </li>
       </ul>
     </nav>
 
     <!-- Footer with User -->
     <div
-      class="shrink-0 border-t border-r border-(--border) px-4 py-4 flex flex-col gap-4"
+      class="shrink-0 border-t border-r border-(--border) px-4 py-4"
     >
-      <router-link
-        to="/profile"
-        class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors p-2"
-      >
-        <div>
-          <i class="pi pi-user" style="font-size: 1.5rem;"></i>
+      <!-- Профиль пользователя с выпадающим меню -->
+      <div class="relative">
+        <div
+          @click="toggleUserMenu"
+          class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors p-2 cursor-pointer"
+        >
+          <div>
+            <i class="pi pi-user" style="font-size: 1.5rem;"></i>
+          </div>
+          <div class="flex flex-col flex-1">
+            <span class="font-bold text-sm text-(--title)">{{
+              userData?.username
+            }}</span>
+            <span class="text-xs text-gray-500 capitalize">{{ userData?.userrole }}</span>
+          </div>
+          <i class="pi pi-chevron-up text-xs text-gray-400" :class="{ 'rotate-180': !userMenuOpen }"></i>
         </div>
-        <div class="flex flex-col">
-          <span class="font-bold text-sm text-(--title)">{{
-            userData?.username
-          }}</span>
-          <span class="text-xs text-gray-500">{{ userData?.userrole }}</span>
-        </div>
-      </router-link>
 
-      <Button
-        @click="handleLogout"
-        label="Выйти из аккаунта"
-        severity="danger"
-      />
+        <!-- Выпадающее меню -->
+        <OverlayPanel ref="op" :showCloseIcon="false" class="user-menu-panel">
+          <div class="flex flex-col gap-1">
+            <button
+              @click="goToProfile"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-(--text) hover:bg-(--bg) rounded-lg transition-colors w-full text-left"
+            >
+              <i class="pi pi-user text-(--blue)"></i>
+              <span>Профиль</span>
+            </button>
+            <button
+              @click="goToSettings"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-(--text) hover:bg-(--bg) rounded-lg transition-colors w-full text-left"
+            >
+              <i class="pi pi-cog text-(--blue)"></i>
+              <span>Настройки</span>
+            </button>
+            <hr class="border-(--border) my-1" />
+            <button
+              @click="handleLogout"
+              class="flex items-center gap-2 px-4 py-2 text-sm text-(--red) hover:bg-red-50 rounded-lg transition-colors w-full text-left"
+            >
+              <i class="pi pi-sign-out"></i>
+              <span>Выйти из аккаунта</span>
+            </button>
+          </div>
+        </OverlayPanel>
+      </div>
     </div>
   </aside>
 </template>
@@ -140,5 +185,18 @@ const handleLogout = () => {
 .sidebar {
   width: 300px;
   min-width: 300px;
+}
+
+/* Стили для выпадающего меню пользователя */
+.user-menu-panel :deep(.p-overlaypanel-content) {
+  padding: 0.5rem;
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.capitalize {
+  text-transform: capitalize;
 }
 </style>

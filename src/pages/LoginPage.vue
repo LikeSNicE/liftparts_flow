@@ -19,6 +19,15 @@ const loginStore = useLoginStore();
       @submit.prevent="loginStore.loginUser()"
       class="card flex flex-col justify-center gap-4 w-full! mt-8!"
     >
+      <!-- Ошибка авторизации -->
+      <div
+        v-if="loginStore.loginError"
+        class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm border border-red-200"
+      >
+        <i class="pi pi-exclamation-circle mr-2"></i>
+        {{ loginStore.loginError }}
+      </div>
+
       <div class="flex flex-col gap-2">
         <label for="username" class="text-sm!">Email</label>
         <InputText
@@ -51,7 +60,7 @@ const loginStore = useLoginStore();
     </form>
 
     <div class="flex gap-1 mt-5!">
-      <p>Нет аккаунта? </p>
+      <p>Нет аккаунта? </p>
       <router-link class="text-(--blue)!" to="/auth/register"
         >Регистрация</router-link
       >
