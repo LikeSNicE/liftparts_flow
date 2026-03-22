@@ -1,6 +1,5 @@
 <script setup>
 import { useRole } from "@/composables/useRole";
-import RoleBasedView from "@/components/RoleBasedView.vue";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
 const { can, userRole } = useRole();
