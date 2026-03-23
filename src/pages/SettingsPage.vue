@@ -4,7 +4,7 @@ import { Button } from "primevue";
 import { InputText } from "primevue";
 import { InputSwitch } from "primevue";
 import { FileUpload } from "primevue";
-import type { UserProfile, NotificationSettings, TwoFASettings } from "@/types/UserTypes";
+import type {  NotificationSettings, TwoFASettings } from "@/types/UserTypes";
 import { useUserStore } from "@/stores/useUserStore";
 
 const userStore = useUserStore();
@@ -19,15 +19,16 @@ const userData = computed(() => userStore.userData);
 const avatarPreview = ref<string | null>(null);
 
 // Форма профиля
-const profileForm = ref<UserProfile>({
-  id: 0,
-  username: "",
-  lastname: "",
-  email: "",
-  phone: "",
-  avatar: "",
-  userrole: "mechanic",
-});
+// const profileForm = ref<Employee>({
+
+//   username: "",
+//   lastname: "",
+//   email: "",
+//   phone: "",
+//   avatar: "",
+//   userrole: "mechanic",
+//   status: "inactive",
+// });
 
 // Форма смены пароля
 const isChangingPassword = ref(false);
@@ -62,15 +63,16 @@ const notifications = ref<NotificationSettings>({
 // Инициализация формы при загрузке
 const initProfileForm = () => {
   if (userData.value) {
-    profileForm.value = {
-      id: userData.value.id,
-      username: userData.value.username,
-      lastname: userData.value.lastname || "",
-      email: userData.value.email,
-      phone: "",
-      avatar: "",
-      userrole: userData.value.userrole,
-    };
+    // profileForm.value = {
+    //   // id: userData.value.id,
+    //   username: userData.value.username,
+    //   lastname: userData.value.lastname || "",
+    //   email: userData.value.email,
+    //   phone: "",
+    //   avatar: "",
+    //   userrole: userData.value.userrole,
+    //   status: userData.value.status,
+    // };
   }
 };
 
@@ -81,8 +83,8 @@ onMounted(() => {
 // Сохранить изменения профиля
 const saveProfile = () => {
   // TODO: API вызов для обновления профиля
-  console.log("Сохранение профиля:", profileForm.value);
-  alert("Профиль успешно обновлён!");
+  // console.log("Сохранение профиля:", profileForm.value);
+  // alert("Профиль успешно обновлён!");
 };
 
 // Загрузка аватара
@@ -91,7 +93,7 @@ const onAvatarUpload = (event: any) => {
   const reader = new FileReader();
   reader.onload = (e: any) => {
     avatarPreview.value = e.target.result;
-    profileForm.value.avatar = e.target.result;
+    // profileForm.value.avatar = e.target.result;
   };
   reader.readAsDataURL(file);
 };
@@ -265,7 +267,7 @@ const saveNotificationSettings = () => {
         </div>
 
         <!-- Форма профиля -->
-        <div class="md:col-span-2">
+        <!-- <div class="md:col-span-2">
           <div class="settings-card bg-white rounded-lg border border-(--border) p-6">
             <h2 class="text-lg font-semibold text-(--title) mb-4">Личная информация</h2>
             
@@ -322,7 +324,7 @@ const saveNotificationSettings = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
 

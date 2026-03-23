@@ -10,9 +10,9 @@ const registerStore = useRegisterStore();
 
 <template>
   <div
-    class="flex flex-col! items-center! justify-center! n bg-white! max-w-lg! w-full! p-8! rounded-2xl! shadow-2xl!"
+    class="flex flex-col! items-center! justify-center! n bg-white! max-w-lg! w-full! p-8! rounded-2xl! shadow-2xl! max-h-screen! overflow-y-auto"
   >
-    <LogoIcon/>
+    <LogoIcon />
 
     <h4 class="text-heading!">Регистрация сотрудника</h4>
     <p class="text-sm!">Заполните данные для доступа к системе</p>
@@ -45,6 +45,18 @@ const registerStore = useRegisterStore();
             v-model="registerStore.lastname"
           />
         </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label for="middlename" class="text-sm!">Отчество (если имеется)</label>
+        <InputText
+          type="text"
+          class="border! border-gray-400! bg-white! rounded-lg! text-(--text)! w-full!"
+          id="middlename"
+          placeholder="Иванович"
+          aria-describedby="middlename"
+          v-model="registerStore.middlename"
+        />
       </div>
 
       <div class="flex flex-col gap-2">
@@ -88,20 +100,16 @@ const registerStore = useRegisterStore();
           class="border! border-gray-400! bg-white! rounded-lg! text-(--text)! w-full!"
           id="password"
           aria-describedby="password"
-          placeholder="••••••••"
+          placeholder="Введите пароль"
         />
       </div>
 
-          <Button
-      type="submit"
-      class="w-full! mt-5! bg-(--blue)! text-white! rounded-lg! hover:bg-blue-600! border-none!"
-      >Зарегистрироваться</Button
-    >
+      <Button
+        type="submit"
+        class="w-full! mt-5! bg-(--blue)! text-white! rounded-lg! hover:bg-blue-600! border-none!"
+        >Зарегистрироваться</Button
+      >
     </form>
-
-
-
-   
 
     <div class="flex gap-1 mt-5!">
       <p>Уже есть аккаунт?</p>
@@ -109,35 +117,3 @@ const registerStore = useRegisterStore();
     </div>
   </div>
 </template>
-
-<style>
-.p-select-option {
-  background-color: var(--white) !important;
-  color: var(--text) !important;
-}
-
-.p-select-option:hover {
-  background-color: var(--blue-bg) !important;
-  color: var(--blue) !important;
-}
-
-.role-options {
-  background-color: var(--white);
-  color: var(--text);
-}
-
-.role-option {
-  background-color: var(--white);
-  color: var(--text);
-}
-
-.role-option:hover {
-  background-color: var(--blue-bg);
-  color: var(--blue);
-}
-
-.role-option-selected {
-  background-color: var(--blue-bg);
-  color: var(--blue);
-}
-</style>

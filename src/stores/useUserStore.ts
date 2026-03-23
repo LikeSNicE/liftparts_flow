@@ -35,6 +35,8 @@ export const useUserStore = defineStore("user", () => {
     localStorage.removeItem(USER_STORAGE_KEY);
   };
 
+  
+
   return {
     userData,
     getAuthUser,

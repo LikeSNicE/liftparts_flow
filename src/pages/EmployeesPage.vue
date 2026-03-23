@@ -1,24 +1,26 @@
 <script setup lang="ts">
-import { ref, computed, inject, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { Button } from "primevue";
 import { Dialog } from "primevue";
 import { InputText } from "primevue";
 import { Dropdown } from "primevue";
-import type { Employee, EmployeeStatus, UserRole } from "@/types/UserTypes";
-import { useUserStore } from "@/stores/useUserStore";
+import type {
+  Employee,
+  EmployeeStatus,
+  UserRole,
+  EmployeeForm,
+} from "@/types/UserTypes";
 
-const userStore = useUserStore();
+import { useEmployeeStore } from "@/stores/useEmployeeStore";
+import { storeToRefs } from "pinia";
 
-// Получаем функцию для регистрации метода из HomePage
-const registerOpenAddEmployee = inject<((fn: () => void) => void) | null>("registerOpenAddEmployee", null);
+const employeeStore = useEmployeeStore();
+const { employeeList } = storeToRefs(employeeStore);
 
 // Регистрируем метод openAddModal при монтировании
-onMounted(() => {
-  registerOpenAddEmployee?.(openAddModal);
+onMounted(async () => {
+  await employeeStore.getEmployees();
 });
-
-// Проверка: только администратор может редактировать
-const isAdmin = computed(() => userStore.userData?.userrole === "admin");
 
 // Статусы сотрудников с отображаемыми названиями
 const statusOptions = [
@@ -36,67 +38,32 @@ const roleOptions = [
   { label: "Склад", value: "warehouse_operator" },
 ];
 
-// Данные сотрудников (заглушка, в будущем будет API)
-const employees = ref<Employee[]>([
-  {
-    id: 1,
-    username: "Иванов Иван",
-    lastname: "Иванов",
-    email: "ivanov@example.com",
-    userrole: "mechanic",
-    status: "at_work",
-  },
-  {
-    id: 2,
-    username: "Петров Пётр",
-    lastname: "Петров",
-    email: "petrov@example.com",
-    userrole: "warehouse_operator",
-    status: "remote",
-  },
-]);
-
 // === Модальное окно добавления/редактирования ===
 const isEditModalVisible = ref(false);
-const isEditing = ref(false);
+
 const currentEmployee = ref<Employee | null>(null);
 
 // Форма сотрудника
-const employeeForm = ref<{
-  username: string;
-  lastname: string;
-  email: string;
-  userrole: UserRole;
-  status: EmployeeStatus;
-}>({
+const createEmptyForm = (): EmployeeForm => ({
   username: "",
   lastname: "",
+  middlename: "",
   email: "",
   userrole: "mechanic",
-  status: "at_work",
+  status: "inactive",
 });
 
-// Открыть модальное окно для добавления
-const openAddModal = () => {
-  isEditing.value = false;
-  currentEmployee.value = null;
-  employeeForm.value = {
-    username: "",
-    lastname: "",
-    email: "",
-    userrole: "mechanic",
-    status: "at_work",
-  };
-  isEditModalVisible.value = true;
-};
+// Инициализируем форму пустыми значениями
+const employeeForm = ref<EmployeeForm>(createEmptyForm());
 
 // Открыть модальное окно для редактирования
 const openEditModal = (employee: Employee) => {
-  isEditing.value = true;
   currentEmployee.value = employee;
+
   employeeForm.value = {
     username: employee.username,
     lastname: employee.lastname,
+    middlename: employee.middlename,
     email: employee.email,
     userrole: employee.userrole,
     status: employee.status,
@@ -113,38 +80,18 @@ const closeEditModal = () => {
     lastname: "",
     email: "",
     userrole: "mechanic",
-    status: "at_work",
+    status: "inactive",
   };
 };
 
-// Сохранение сотрудника
-const saveEmployee = () => {
-  if (isEditing.value && currentEmployee.value) {
-    // Редактирование существующего
-    const index = employees.value.findIndex((e) => e.id === currentEmployee.value!.id);
-    if (index !== -1) {
-      employees.value[index] = {
-        ...currentEmployee.value,
-        username: employeeForm.value.username,
-        lastname: employeeForm.value.lastname,
-        email: employeeForm.value.email,
-        userrole: employeeForm.value.userrole,
-        status: employeeForm.value.status,
-      };
-    }
-  } else {
-    // Добавление нового
-    const newEmployee: Employee = {
-      id: Date.now(),
-      username: employeeForm.value.username,
-      lastname: employeeForm.value.lastname,
-      email: employeeForm.value.email,
-      userrole: employeeForm.value.userrole,
-      status: employeeForm.value.status,
-    };
-    employees.value.push(newEmployee);
+const handleUpdateEmployee = async () => {
+  if (currentEmployee.value) {
+    await employeeStore.updateEmployee(
+      currentEmployee.value.id,
+      employeeForm.value,
+    );
+    closeEditModal();
   }
-  closeEditModal();
 };
 
 // === Модальное окно подтверждения удаления ===
@@ -164,11 +111,11 @@ const closeDeleteModal = () => {
 };
 
 // Подтверждение удаления
-const confirmDelete = () => {
+const handleEmployeeDelete = () => {
   // Проверка: пользователь должен ввести "Удалить" (в любом регистре)
   if (deleteConfirmText.value.toLowerCase() === "удалить") {
     if (currentEmployee.value) {
-      employees.value = employees.value.filter((e) => e.id !== currentEmployee.value!.id);
+      employeeStore.deleteEmployee(currentEmployee.value.id);
     }
     closeDeleteModal();
     closeEditModal();
@@ -190,7 +137,9 @@ const getRoleLabel = (role: UserRole) => {
   <div class="employees-page">
     <!-- Таблица сотрудников -->
     <div class="employees-card bg-white rounded-lg p-6">
-      <h2 class="text-xl font-semibold text-(--title) mb-4">Список сотрудников</h2>
+      <h2 class="text-xl font-semibold text-(--title) mb-4">
+        Список сотрудников
+      </h2>
 
       <div class="overflow-x-auto">
         <table class="w-full">
@@ -204,20 +153,24 @@ const getRoleLabel = (role: UserRole) => {
           </thead>
           <tbody>
             <tr
-              v-for="employee in employees"
+              v-for="employee in employeeStore.employeeList"
               :key="employee.id"
               class="border-t border-(--border) hover:bg-(--bg)"
             >
               <td class="px-4 py-3 text-(--text)">
-                {{ employee.username }}
+                {{ employee.username }} {{ employee.lastname }}
+                {{ employee.middlename }}
               </td>
               <td class="px-4 py-3">
                 <span
                   class="px-2 py-1 rounded text-xs font-medium"
                   :class="{
-                    'bg-(--blue-bg) text-(--blue)': employee.userrole === 'mechanic',
-                    'bg-(--purple-bg) text-(--purple)': employee.userrole === 'admin',
-                    'bg-orange-100 text-orange-700': employee.userrole === 'warehouse_operator',
+                    'bg-(--blue-bg) text-(--blue)':
+                      employee.userrole === 'mechanic',
+                    'bg-(--purple-bg) text-(--purple)':
+                      employee.userrole === 'admin',
+                    'bg-orange-100 text-orange-700':
+                      employee.userrole === 'warehouse_operator',
                   }"
                 >
                   {{ getRoleLabel(employee.userrole) }}
@@ -242,30 +195,28 @@ const getRoleLabel = (role: UserRole) => {
                   href="#"
                   class="edit-link"
                   @click.prevent="openEditModal(employee)"
-                  v-if="isAdmin"
                 >
                   Редактировать
                 </a>
               </td>
             </tr>
-            <tr v-if="employees.length === 0">
-              <td colspan="4" class="px-4 py-8 text-center text-(--placeholder)">
+            <tr v-if="employeeList.length === 0">
+              <td
+                colspan="4"
+                class="px-4 py-8 text-center text-(--placeholder)"
+              >
                 Список сотрудников пуст
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <p class="text-xs text-(--placeholder) mt-4">
-        * Добавление новых администраторов возможно только через SQL дамп или консоль сервера.
-      </p>
     </div>
 
     <!-- Модальное окно добавления/редактирования (ТОЛЬКО ПО ЦЕНТРУ) -->
     <Dialog
       v-model:visible="isEditModalVisible"
-      :header="isEditing ? 'Редактировать сотрудника' : 'Добавить сотрудника'"
+      header="Редактировать сотрудника"
       :style="{ width: '30rem' }"
       position="center"
       :modal="true"
@@ -274,16 +225,42 @@ const getRoleLabel = (role: UserRole) => {
     >
       <div class="flex flex-col gap-4">
         <div class="flex items-center gap-4">
-          <label for="username" class="font-semibold w-28 text-(--text)">ФИО</label>
+          <label for="lastname" class="font-semibold w-28 text-(--text)"
+            >Фамилия</label
+          >
+          <InputText
+            id="lastname"
+            v-model="employeeForm.lastname"
+            class="flex-auto"
+            placeholder="Петров"
+          />
+        </div>
+        <div class="flex items-center gap-4">
+          <label for="username" class="font-semibold w-28 text-(--text)"
+            >Имя</label
+          >
           <InputText
             id="username"
             v-model="employeeForm.username"
             class="flex-auto"
-            placeholder="Иванов Иван"
+            placeholder="Пётер"
           />
         </div>
         <div class="flex items-center gap-4">
-          <label for="email" class="font-semibold w-28 text-(--text)">Email</label>
+          <label for="username" class="font-semibold w-28 text-(--text)"
+            >Отчество</label
+          >
+          <InputText
+            id="username"
+            v-model="employeeForm.middlename"
+            class="flex-auto"
+            placeholder="Петрович"
+          />
+        </div>
+        <div class="flex items-center gap-4">
+          <label for="email" class="font-semibold w-28 text-(--text)"
+            >Email</label
+          >
           <InputText
             id="email"
             v-model="employeeForm.email"
@@ -292,19 +269,23 @@ const getRoleLabel = (role: UserRole) => {
           />
         </div>
         <div class="flex items-center gap-4">
-          <label for="role" class="font-semibold w-28 text-(--text)">Роль</label>
+          <label for="role" class="font-semibold w-28 text-(--text)"
+            >Роль</label
+          >
           <Dropdown
             id="role"
             v-model="employeeForm.userrole"
             :options="roleOptions"
             option-label="label"
             option-value="value"
-            class="flex-auto"
+            class="flex-auto border"
             placeholder="Выберите роль"
           />
         </div>
         <div class="flex items-center gap-4">
-          <label for="status" class="font-semibold w-28 text-(--text)">Статус</label>
+          <label for="status" class="font-semibold w-28 text-(--text)"
+            >Статус</label
+          >
           <Dropdown
             id="status"
             v-model="employeeForm.status"
@@ -323,7 +304,6 @@ const getRoleLabel = (role: UserRole) => {
           label="Удалить"
           class="delete-btn-modal"
           @click="openDeleteModal"
-          v-if="isEditing"
         />
         <div class="flex justify-end gap-2">
           <Button
@@ -336,7 +316,7 @@ const getRoleLabel = (role: UserRole) => {
             type="button"
             label="Сохранить"
             class="save-btn"
-            @click="saveEmployee"
+            @click="handleUpdateEmployee"
           />
         </div>
       </div>
@@ -355,19 +335,25 @@ const getRoleLabel = (role: UserRole) => {
       <div class="flex flex-col gap-4">
         <p class="text-(--text)">
           Вы действительно хотите удалить сотрудника
-          <span class="font-semibold text-(--title)">{{ currentEmployee?.username }}</span>?
+          <span class="font-semibold text-(--title)">{{
+            currentEmployee?.username
+          }}</span
+          >?
         </p>
         <p class="text-sm text-(--placeholder)">
-          Для подтверждения введите слово <span class="font-semibold">«Удалить»</span>
+          Для подтверждения введите слово
+          <span class="font-semibold">«Удалить»</span>
         </p>
         <div class="flex items-center gap-4">
-          <label for="delete-confirm" class="font-semibold w-20 text-(--text)">Текст</label>
+          <label for="delete-confirm" class="font-semibold w-20 text-(--text)"
+            >Текст</label
+          >
           <InputText
             id="delete-confirm"
             v-model="deleteConfirmText"
             class="flex-auto"
             placeholder="Введите «Удалить»"
-            @keyup.enter="confirmDelete"
+            @keyup.enter="handleEmployeeDelete"
           />
         </div>
       </div>
@@ -383,7 +369,7 @@ const getRoleLabel = (role: UserRole) => {
           type="button"
           label="Удалить"
           class="delete-btn-confirm"
-          @click="confirmDelete"
+          @click="handleEmployeeDelete"
           :disabled="deleteConfirmText.toLowerCase() !== 'удалить'"
         />
       </div>
@@ -392,10 +378,6 @@ const getRoleLabel = (role: UserRole) => {
 </template>
 
 <style scoped>
-.employees-page {
-  padding: 2rem;
-}
-
 .employees-card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
