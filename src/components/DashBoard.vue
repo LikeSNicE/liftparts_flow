@@ -9,12 +9,10 @@ const { userData } = storeToRefs(userStore);
 </script>
 
 <template>
-  <div class="p-5">
+  <div>
     <h2>Здравствуйте {{ userStore.userData?.username }}</h2>
 
-    <nav class="navigation flex flex-col gap-2.5 bg-[#f5f5f5] rounded-lg mb-5">
-      <h2 class="mt-0">Навигация по ролям:</h2>
-
+    <nav class="navigation flex flex-col gap-2.5 bg-[#f5f5f5] rounded-lg my-5">
       <router-link to="/" v-if="can(['admin', 'mechanic', 'manager'])">
         Главная
       </router-link>
@@ -29,7 +27,6 @@ const { userData } = storeToRefs(userStore);
         >Кабинет оператора склада</router-link
       >
     </nav>
-
   </div>
 </template>
 

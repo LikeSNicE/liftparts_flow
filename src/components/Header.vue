@@ -10,50 +10,23 @@ defineProps<{
   showAddButton?: boolean;
 }>();
 
-const emit = defineEmits<{
-  addEmployee: [];
-}>();
-
 // Динамический заголовок в зависимости от маршрута
 const headerTitle = computed(() => {
-  const titles: Record<string, string> = {
-    "/": "Главная",
-    "/users": "Сотрудники",
-    "/admin": "Панель администратора",
-    "/mechanic": "Механик",
-    "/manager": "Менеджер",
-    "/dashboard": "Дашборд",
-    "/requests": "Заявки",
-    "/parts": "Каталог деталей",
-    "/orders": "Заказы",
-    "/settings": "Настройки",
-  };
-  return titles[route.path] || "Заголовок";
+  return route.meta.title || "";
 });
-
-const handleAddEmployee = () => {
-  emit("addEmployee");
-};
 </script>
 
 <template>
-  <header class="header! py-2 px-4 bg-(--white) flex items-center justify-between border-b border-(--border) sticky top-0">
+  <header
+    class="header! py-2 px-4 bg-(--white) flex items-center justify-between sticky top-0 border-b border-(--border) z-10"
+  >
     <h5 class="text-(--title) font-semibold">{{ headerTitle }}</h5>
 
     <Button
-      v-if="showAddButton"
-      type="button"
-      label="Добавить сотрудника"
-      icon="pi pi-plus"
-      class="add-employee-btn"
-      @click="handleAddEmployee"
-    />
-    <Button
-      v-else
       type="button"
       label="Новая заявка"
       icon="pi pi-plus-circle"
-      class="bg-(--blue)! border-none!"
+      class="add-employee-btn"
     />
   </header>
 </template>

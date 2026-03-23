@@ -5,6 +5,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { type UserRole } from "@/types/UserTypes";
 import { useUserStore } from "@/stores/useUserStore";
 
+
 export interface RouteMeta {
   requiresAuth?: boolean;
   roles?: UserRole[];
@@ -22,37 +23,52 @@ const routes = [
           {
             path: "/",
             component: () => import("@/components/DashBoard.vue"),
-            meta: { requiresAuth: true },
+            meta: { requiresAuth: true, title: "Главная" },
           },
           {
             path: "/admin",
             component: () => import("@/pages/AdminPage.vue"),
-            meta: { requiresAuth: true, roles: ["admin"] },
+            meta: {
+              requiresAuth: true,
+              roles: ["admin"],
+              title: "Панель администратора",
+            },
           },
           {
             path: "/mechanic",
             component: () => import("@/pages/MechanicPage.vue"),
-            meta: { requiresAuth: true, roles: ["admin", "mechanic"] },
+            meta: {
+              requiresAuth: true,
+              roles: ["admin", "mechanic"],
+              title: "Панель механика",
+            },
           },
           {
             path: "/manager",
             component: () => import("@/pages/ManagerPage.vue"),
-            meta: { requiresAuth: true, roles: ["admin", "manager"] },
+            meta: {
+              requiresAuth: true,
+              roles: ["admin", "manager"],
+              title: "Панель механика",
+            },
           },
           {
             path: "/test",
             component: () => import("@/components/Test.vue"),
-            meta: { requiresAuth: true },
+            meta: {
+              requiresAuth: true,
+              title: "Тест",
+            },
           },
           {
             path: "/users",
             component: () => import("@/pages/EmployeesPage.vue"),
-            meta: { requiresAuth: true, roles: ["admin"] },
+            meta: { requiresAuth: true, roles: ["admin"], title: "Сотрудники" },
           },
           {
             path: "/settings",
             component: () => import("@/pages/SettingsPage.vue"),
-            meta: { requiresAuth: true },
+            meta: { requiresAuth: true, title: "Настройки" },
           },
         ],
       },

@@ -22,7 +22,7 @@ const loginStore = useLoginStore();
       <!-- Ошибка авторизации -->
       <div
         v-if="loginStore.loginError"
-        class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm border border-red-200"
+        class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm border border-red-200 flex items-center"
       >
         <i class="pi pi-exclamation-circle mr-2"></i>
         {{ loginStore.loginError }}
@@ -48,7 +48,7 @@ const loginStore = useLoginStore();
           class="border! border-gray-400! bg-white! rounded-lg! text-(--text)! w-full!"
           id="password"
           aria-describedby="username-password"
-          placeholder="••••••••"
+          placeholder="Введите пароль"
         />
       </div>
 

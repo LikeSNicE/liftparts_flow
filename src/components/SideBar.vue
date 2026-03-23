@@ -7,15 +7,17 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { router } from "@/router/router";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
+import { useRole } from "@/composables/useRole";
 
 const authStore = useAuthStore();
 const userStore = useUserStore();
+const { can } = useRole();
 
 const { userData } = storeToRefs(userStore);
 
 // Выпадающее меню пользователя
 const userMenuOpen = ref(false);
-const op = ref<InstanceType<typeof OverlayPanelType> | null>();
+const op = ref<InstanceType<typeof OverlayPanelType> | null>(); // Ссылка на OverlayPanel
 
 const toggleUserMenu = (event: Event) => {
   op.value?.toggle(event);
@@ -29,7 +31,7 @@ const closeUserMenu = () => {
 
 const goToProfile = () => {
   closeUserMenu();
-  router.push("/settings");
+  router.push("/profile");
 };
 
 const goToSettings = () => {
@@ -108,14 +110,17 @@ const handleLogout = () => {
             <span class="font-medium">Дашборд</span>
           </router-link>
         </li>
+      </ul>
 
+      <ul v-if="can('admin')" class="mt-4">
         <li>
           <div
-            class="px-4 py-2 mt-4 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+            class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"
           >
             Управление
           </div>
         </li>
+
         <li
           class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
         >
@@ -128,9 +133,7 @@ const handleLogout = () => {
     </nav>
 
     <!-- Footer with User -->
-    <div
-      class="shrink-0 border-t border-r border-(--border) px-4 py-4"
-    >
+    <div class="shrink-0 border-t border-r border-(--border) px-4 py-4">
       <!-- Профиль пользователя с выпадающим меню -->
       <div class="relative">
         <div
@@ -138,15 +141,20 @@ const handleLogout = () => {
           class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors p-2 cursor-pointer"
         >
           <div>
-            <i class="pi pi-user" style="font-size: 1.5rem;"></i>
+            <i class="pi pi-user" style="font-size: 1.5rem"></i>
           </div>
           <div class="flex flex-col flex-1">
             <span class="font-bold text-sm text-(--title)">{{
               userData?.username
             }}</span>
-            <span class="text-xs text-gray-500 capitalize">{{ userData?.userrole }}</span>
+            <span class="text-xs text-gray-500 capitalize">{{
+              userData?.userrole
+            }}</span>
           </div>
-          <i class="pi pi-chevron-up text-xs text-gray-400" :class="{ 'rotate-180': !userMenuOpen }"></i>
+          <i
+            class="pi pi-chevron-up text-xs text-gray-400 transition-transform"
+            :class="[!userMenuOpen ? 'rotate-180!' : '']"
+          ></i>
         </div>
 
         <!-- Выпадающее меню -->
