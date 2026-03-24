@@ -6,7 +6,6 @@ import { getErrorMessage } from "@/utils/getErrorMessage";
 import type {
   userRegisterPayload,
   UserRole,
-  EmployeeStatus,
 } from "@/types/UserTypes";
 
 export const useRegisterStore = defineStore("register", () => {

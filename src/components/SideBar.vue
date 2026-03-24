@@ -5,15 +5,22 @@ import type { OverlayPanel as OverlayPanelType } from "primevue";
 import LogoIcon from "./LogoIcon.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { router } from "@/router/router";
+import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
 import { useRole } from "@/composables/useRole";
 
+const route = useRoute();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const { can } = useRole();
 
 const { userData } = storeToRefs(userStore);
+
+// Проверка активного маршрута для подсветки
+const isActiveRoute = (path: string) => {
+  return route.path === path;
+};
 
 // Выпадающее меню пользователя
 const userMenuOpen = ref(false);
@@ -68,7 +75,8 @@ const handleLogout = () => {
           </div>
         </li>
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/" class="flex items-center gap-3">
             <i class="pi pi-home"></i>
@@ -76,7 +84,8 @@ const handleLogout = () => {
           </router-link>
         </li>
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/requests') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/requests" class="flex items-center gap-3">
             <i class="pi pi-th-large"></i>
@@ -85,7 +94,8 @@ const handleLogout = () => {
         </li>
 
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/parts') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/parts" class="flex items-center gap-3">
             <i class="pi pi-box"></i>
@@ -94,7 +104,8 @@ const handleLogout = () => {
         </li>
 
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/orders') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/orders" class="flex items-center gap-3">
             <i class="pi pi-shopping-cart"></i>
@@ -103,7 +114,8 @@ const handleLogout = () => {
         </li>
 
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/dashboard') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/dashboard" class="flex items-center gap-3">
             <i class="pi pi-chart-line"></i>
@@ -122,7 +134,8 @@ const handleLogout = () => {
         </li>
 
         <li
-          class="hover:bg-(--blue) hover:text-(--white) rounded-lg px-4 py-3 transition-colors"
+          :class="isActiveRoute('/users') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/users" class="flex items-center gap-3">
             <i class="pi pi-users"></i>

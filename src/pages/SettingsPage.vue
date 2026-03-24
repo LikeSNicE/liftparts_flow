@@ -81,11 +81,11 @@ onMounted(() => {
 });
 
 // Сохранить изменения профиля
-const saveProfile = () => {
-  // TODO: API вызов для обновления профиля
-  // console.log("Сохранение профиля:", profileForm.value);
-  // alert("Профиль успешно обновлён!");
-};
+// const saveProfile = () => {
+//   // TODO: API вызов для обновления профиля
+//   // console.log("Сохранение профиля:", profileForm.value);
+//   // alert("Профиль успешно обновлён!");
+// };
 
 // Загрузка аватара
 const onAvatarUpload = (event: any) => {

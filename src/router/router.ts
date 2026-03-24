@@ -61,6 +61,11 @@ const routes = [
             },
           },
           {
+            path: "/requests",
+            component: () => import("@/pages/RequestsPage.vue"),
+            meta: { requiresAuth: true, roles: ["admin", "mechanic", "warehouse_operator"], title: "Заявки" },
+          },
+          {
             path: "/users",
             component: () => import("@/pages/EmployeesPage.vue"),
             meta: { requiresAuth: true, roles: ["admin"], title: "Сотрудники" },
