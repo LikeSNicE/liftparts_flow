@@ -158,7 +158,7 @@ const getRoleLabel = (role: UserRole) => {
               class="border-t border-(--border) hover:bg-(--bg)"
             >
               <td class="px-4 py-3 text-(--text)">
-                {{ employee.username }} {{ employee.lastname }}
+                {{ employee.lastname }} {{ employee.username }}
                 {{ employee.middlename }}
               </td>
               <td class="px-4 py-3">
