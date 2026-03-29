@@ -145,7 +145,8 @@ const getRoleLabel = (role: UserRole) => {
         <table class="w-full">
           <thead>
             <tr class="text-left bg-(--bg) text-(--text)">
-              <th class="px-4 py-3 font-semibold rounded-tl-lg">ФИО</th>
+              <th class="px-4 py-3 font-semibold">id</th>
+              <th class="px-4 py-3 font-semibold">ФИО</th>
               <th class="px-4 py-3 font-semibold">Роль</th>
               <th class="px-4 py-3 font-semibold">Статус</th>
               <th class="px-4 py-3 font-semibold rounded-tr-lg">Действия</th>
@@ -157,8 +158,9 @@ const getRoleLabel = (role: UserRole) => {
               :key="employee.id"
               class="border-t border-(--border) hover:bg-(--bg)"
             >
+              <td class="px-4 py-3 text-(--text)">{{ employee.id }}</td>
               <td class="px-4 py-3 text-(--text)">
-                {{ employee.username }} {{ employee.lastname }}
+                {{ employee.lastname }} {{ employee.username }}
                 {{ employee.middlename }}
               </td>
               <td class="px-4 py-3">

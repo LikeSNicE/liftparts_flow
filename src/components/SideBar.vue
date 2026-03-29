@@ -36,11 +36,6 @@ const closeUserMenu = () => {
   op.value?.hide();
 };
 
-const goToProfile = () => {
-  closeUserMenu();
-  router.push("/profile");
-};
-
 const goToSettings = () => {
   closeUserMenu();
   router.push("/settings");
@@ -75,7 +70,11 @@ const handleLogout = () => {
           </div>
         </li>
         <li
-          :class="isActiveRoute('/') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          :class="
+            isActiveRoute('/')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/" class="flex items-center gap-3">
@@ -84,7 +83,11 @@ const handleLogout = () => {
           </router-link>
         </li>
         <li
-          :class="isActiveRoute('/requests') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          :class="
+            isActiveRoute('/requests')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/requests" class="flex items-center gap-3">
@@ -94,7 +97,12 @@ const handleLogout = () => {
         </li>
 
         <li
-          :class="isActiveRoute('/parts') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          v-if="can(['admin', 'warehouse_operator'])"
+          :class="
+            isActiveRoute('/parts')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/parts" class="flex items-center gap-3">
@@ -104,7 +112,12 @@ const handleLogout = () => {
         </li>
 
         <li
-          :class="isActiveRoute('/orders') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          v-if="can(['admin', 'warehouse_operator'])"
+          :class="
+            isActiveRoute('/orders')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/orders" class="flex items-center gap-3">
@@ -114,7 +127,11 @@ const handleLogout = () => {
         </li>
 
         <li
-          :class="isActiveRoute('/dashboard') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          :class="
+            isActiveRoute('/dashboard')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/dashboard" class="flex items-center gap-3">
@@ -134,7 +151,11 @@ const handleLogout = () => {
         </li>
 
         <li
-          :class="isActiveRoute('/users') ? 'bg-(--blue) text-(--white)' : 'hover:bg-(--blue) hover:text-(--white)'"
+          :class="
+            isActiveRoute('/users')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
           class="rounded-lg px-4 py-3 transition-colors"
         >
           <router-link to="/users" class="flex items-center gap-3">
@@ -173,13 +194,6 @@ const handleLogout = () => {
         <!-- Выпадающее меню -->
         <OverlayPanel ref="op" :showCloseIcon="false" class="user-menu-panel">
           <div class="flex flex-col gap-1">
-            <button
-              @click="goToProfile"
-              class="flex items-center gap-2 px-4 py-2 text-sm text-(--text) hover:bg-(--bg) rounded-lg transition-colors w-full text-left"
-            >
-              <i class="pi pi-user text-(--blue)"></i>
-              <span>Профиль</span>
-            </button>
             <button
               @click="goToSettings"
               class="flex items-center gap-2 px-4 py-2 text-sm text-(--text) hover:bg-(--bg) rounded-lg transition-colors w-full text-left"

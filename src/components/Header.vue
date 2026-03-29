@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { Button } from "primevue";
-import { computed, inject } from "vue";
+import { computed } from "vue";
 import { useRoute } from "vue-router";
+import { useModalStore } from "@/stores/useModalStore";
 
 const route = useRoute();
+const modalStore = useModalStore();
 
 // Props
 defineProps<{
@@ -15,12 +17,9 @@ const headerTitle = computed(() => {
   return route.meta.title || "";
 });
 
-// Получаем функцию открытия модального окна из provide
-const openCreateModal = inject<() => void>("openCreateModal", () => {});
-
 // Обработчик клика по кнопке
 const handleCreateRequest = () => {
-  openCreateModal();
+  modalStore.openModal("createRequest");
 };
 </script>
 
@@ -44,7 +43,7 @@ const handleCreateRequest = () => {
 <style scoped>
 /* Кнопка "Создать заявку" - как в макете: синий фон #2563EB, белый текст, иконка плюса */
 .create-request-btn {
-  background-color: #2563EB !important;
+  background-color: #2563eb !important;
   border: none !important;
   color: white !important;
   border-radius: 0.5rem;

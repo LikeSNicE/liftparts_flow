@@ -18,22 +18,16 @@ export function useRole() {
     if (Array.isArray(allowedRoles)) {
       return allowedRoles.includes(userRole.value);
     }
-    
+
     // "admin" === "admin" (true)
     return userRole.value === allowedRoles;
   };
 
   const can = (allowedRoles: UserRole | UserRole[]) => hasRole(allowedRoles);
 
-  // const isAdmin = computed(() => hasRole("admin"));
-  // const isMontazhnik = computed(() => hasRole("montazhnik"));
-  // const isManager = computed(() => hasRole("manager"));
-
   return {
     userRole,
-    // isAdmin,
-    // isMontazhnik,
-    // isManager,
+
     hasRole,
     can,
   };
