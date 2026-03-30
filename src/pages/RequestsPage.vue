@@ -203,14 +203,13 @@ const getStatusColor = (status: RequestStatus) => {
           <thead>
             <tr class="text-left bg-(--bg) text-(--text)">
               <th class="px-4 py-3 font-semibold rounded-tl-lg">№</th>
-              <th class="px-4 py-3 font-semibold rounded-tr-lg">
+              <th class="px-4 py-3 font-semibold">
                 Дата создания
               </th>
 
-              <th class="px-4 py-3 font-semibold">Автор заявки</th>
-
-              <th class="px-4 py-3 font-semibold">Статус</th>
+              <th class="px-4 py-3 font-semibold">ID работника</th>
               <th class="px-4 py-3 font-semibold">ID лифта</th>
+              <th class="px-4 py-3 font-semibold">Статус</th>
 
               <th class="px-4 py-3 font-semibold rounded-tr-lg">Убрать</th>
             </tr>
@@ -230,11 +229,10 @@ const getStatusColor = (status: RequestStatus) => {
               </td>
 
               <td class="px-4 py-3 text-(--text)">
-                {{
-                  request.authorId === userData?.id
-                    ? `Вы (${request.author})`
-                    : request.authorId
-                }}
+                {{ request.authorId }}
+              </td>
+              <td class="px-4 py-3 text-(--text)">
+                <span>{{ request.liftId }}</span>
               </td>
 
               <td class="px-4 py-3">
@@ -244,9 +242,6 @@ const getStatusColor = (status: RequestStatus) => {
                 >
                   {{ getStatusLabel(request.status) }}
                 </span>
-              </td>
-              <td class="px-4 py-3 text-(--text)">
-                <span>{{ request.liftId }}</span>
               </td>
 
               <td class="px-4 py-3 text-(--text) text-sm">
@@ -260,7 +255,7 @@ const getStatusColor = (status: RequestStatus) => {
             </tr>
             <tr v-if="filteredRequests.length === 0">
               <td
-                :colspan="7"
+                :colspan="6"
                 class="px-4 py-8 text-center text-(--placeholder)"
               >
                 Список заявок пуст
