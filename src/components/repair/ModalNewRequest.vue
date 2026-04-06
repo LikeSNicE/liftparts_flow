@@ -1,4 +1,3 @@
-divdiv
 <script setup lang="ts">
 import {
   Dialog,
@@ -16,13 +15,8 @@ import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
-import { computed, onBeforeUnmount, ref } from "vue";
-import {
-  useAddressAutocomplete,
-  type AddressSuggestion,
-} from "@/composables/useAddressAutocomplete";
-
-const CITY_OPTIONS = ["Астана", "Алматы", "Шымкент"];
+import { ref } from "vue";
+import { useRequestAddressPicker } from "@/composables/useRequestAddressPicker";
 
 const requestStore = useRepairRequestStore();
 const modalStore = useModalStore();
@@ -38,121 +32,27 @@ if (!requestForm.city) {
 }
 
 const selectedParts = ref<PartOption[]>([{ partName: "", quantity: 1 }]);
-const addressError = ref("");
-const selectedAddress = ref<AddressSuggestion | null>(null);
-const isMapDialogVisible = ref(false);
-const isSuggestionsVisible = ref(false);
-let addressSearchTimeout: ReturnType<typeof setTimeout> | null = null;
-
 const {
-  suggestions: addressSuggestions,
-  isLoading: addressLoading,
-  searchAddresses,
-  clearSuggestions,
-} = useAddressAutocomplete();
-
-const hasAddressSuggestions = computed(
-  () => isSuggestionsVisible.value && addressSuggestions.value.length > 0,
-);
-
-const handleAddressInput = () => {
-  selectedAddress.value = null;
-  requestForm.latitude = null;
-  requestForm.longitude = null;
-  addressError.value = "";
-
-  if (addressSearchTimeout) {
-    clearTimeout(addressSearchTimeout);
-  }
-
-  addressSearchTimeout = setTimeout(async () => {
-    await searchAddresses(requestForm.objectAddress || "", requestForm.city);
-    isSuggestionsVisible.value = addressSuggestions.value.length > 0;
-
-    if (
-      (requestForm.objectAddress || "").trim().length >= 3 &&
-      addressSuggestions.value.length === 0
-    ) {
-      addressError.value = "Адреса не найдены";
-    }
-  }, 300);
-};
-
-const handleAddressBlur = () => {
-  setTimeout(() => {
-    isSuggestionsVisible.value = false;
-  }, 120);
-};
-
-const handleCityChange = () => {
-  requestForm.objectAddress = "";
-  requestForm.latitude = null;
-  requestForm.longitude = null;
-  selectedAddress.value = null;
-  addressError.value = "";
-  isSuggestionsVisible.value = false;
-  clearSuggestions();
-
-  if (addressSearchTimeout) {
-    clearTimeout(addressSearchTimeout);
-    addressSearchTimeout = null;
-  }
-};
-
-const applyAddressSuggestion = (suggestion: AddressSuggestion) => {
-  selectedAddress.value = suggestion;
-  requestForm.objectAddress = suggestion.displayName;
-  requestForm.latitude = suggestion.latitude;
-  requestForm.longitude = suggestion.longitude;
-  isSuggestionsVisible.value = false;
-  clearSuggestions();
-  addressError.value = "";
-};
-
-const openMapPicker = () => {
-  isMapDialogVisible.value = true;
-};
-
-const closeMapPicker = () => {
-  isMapDialogVisible.value = false;
-};
-
-const handleMapMessage = (event: MessageEvent) => {
-  if (event.data?.type !== "ADDRESS_SELECTED") {
-    return;
-  }
-
-  const payload = event.data.data;
-  if (!payload) {
-    return;
-  }
-
-  const latitude = Number(payload.lat);
-  const longitude = Number(payload.lon);
-  const address = String(payload.address || "");
-
-  if (Number.isNaN(latitude) || Number.isNaN(longitude) || !address.trim()) {
-    return;
-  }
-
-  requestForm.objectAddress = address;
-  requestForm.latitude = latitude;
-  requestForm.longitude = longitude;
-  selectedAddress.value = {
-    displayName: address,
-    latitude,
-    longitude,
-  };
-
-  clearSuggestions();
-  isSuggestionsVisible.value = false;
-  addressError.value = "";
-  closeMapPicker();
-};
-
-if (typeof window !== "undefined") {
-  window.addEventListener("message", handleMapMessage);
-}
+  cityOptions,
+  defaultCity,
+  addressError,
+  isMapDialogVisible,
+  mapPickerUrl,
+  addressSuggestions,
+  addressLoading,
+  hasAddressSuggestions,
+  isAddressFixed,
+  fixedCoordinatesLabel,
+  handleAddressInput,
+  handleAddressFocus,
+  handleAddressBlur,
+  handleCityChange,
+  applyAddressSuggestion,
+  openMapPicker,
+  closeMapPicker,
+  resetAddressState,
+  validateAddressSelection,
+} = useRequestAddressPicker(requestForm);
 
 const addPartRow = () => {
   selectedParts.value.push({ partName: "", quantity: 1 });
@@ -175,21 +75,10 @@ const resetRequestForm = () => {
   requestForm.type = "planned";
   requestForm.parts = [];
 
-  requestForm.city = "Астана";
-  requestForm.latitude = null;
-  requestForm.longitude = null;
-  requestForm.objectAddress = "";
+  requestForm.city = defaultCity;
   requestForm.comment = "";
 
-  clearSuggestions();
-  isSuggestionsVisible.value = false;
-  addressError.value = "";
-  selectedAddress.value = null;
-
-  if (addressSearchTimeout) {
-    clearTimeout(addressSearchTimeout);
-    addressSearchTimeout = null;
-  }
+  resetAddressState();
 
   selectedParts.value.splice(0, selectedParts.value.length);
   selectedParts.value.push({ partName: "", quantity: 1 });
@@ -210,17 +99,7 @@ const onModalVisibilityChange = (value: boolean) => {
 
 // Создание заявки
 const handleCreateRequest = async () => {
-  requestForm.objectAddress = (requestForm.objectAddress || "").trim();
-
-  if (
-    !requestForm.objectAddress ||
-    requestForm.latitude === null ||
-    requestForm.latitude === undefined ||
-    requestForm.longitude === null ||
-    requestForm.longitude === undefined
-  ) {
-    addressError.value =
-      "Выберите адрес из подсказок, чтобы заявка и карта были синхронизированы";
+  if (!validateAddressSelection()) {
     return;
   }
 
@@ -251,16 +130,6 @@ const handleCreateRequest = async () => {
     console.log("Ошибка отправки заявки:", error);
   }
 };
-
-onBeforeUnmount(() => {
-  if (addressSearchTimeout) {
-    clearTimeout(addressSearchTimeout);
-  }
-
-  if (typeof window !== "undefined") {
-    window.removeEventListener("message", handleMapMessage);
-  }
-});
 </script>
 
 <template>
@@ -437,7 +306,7 @@ onBeforeUnmount(() => {
         </label>
         <Dropdown
           v-model="requestForm.city"
-          :options="CITY_OPTIONS"
+          :options="cityOptions"
           class="w-full"
           placeholder="Выберите город"
           @change="handleCityChange"
@@ -459,7 +328,7 @@ onBeforeUnmount(() => {
             class="col-span-2 w-full"
             placeholder="Начните вводить адрес и выберите вариант"
             @input="handleAddressInput"
-            @focus="isSuggestionsVisible = addressSuggestions.length > 0"
+            @focus="handleAddressFocus"
             @blur="handleAddressBlur"
           />
           <Button
@@ -492,13 +361,10 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="
-            selectedAddress && requestForm.latitude && requestForm.longitude
-          "
+          v-if="isAddressFixed"
           class="text-xs text-emerald-600"
         >
-          Адрес зафиксирован. Координаты: {{ requestForm.latitude.toFixed(6) }},
-          {{ requestForm.longitude.toFixed(6) }}
+          Адрес зафиксирован. Координаты: {{ fixedCoordinatesLabel }}
         </div>
 
         <div v-if="addressError" class="text-xs text-(--red)">
@@ -550,7 +416,7 @@ onBeforeUnmount(() => {
     :style="{ width: '70rem', maxWidth: '95vw' }"
   >
     <iframe
-      src="/elevator-map-picker.html"
+      :src="mapPickerUrl"
       title="Выбор адреса"
       class="w-full border-0 rounded-lg"
       style="height: 65vh"

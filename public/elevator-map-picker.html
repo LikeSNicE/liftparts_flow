@@ -33,6 +33,9 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    const queryParams = new URLSearchParams(window.location.search);
+    const parentOrigin = queryParams.get("parentOrigin") || window.location.origin;
+
     const map = L.map("map").setView([51.1282, 71.4304], 12);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -48,7 +51,7 @@
           type: "ADDRESS_SELECTED",
           data: { lat, lon, address },
         },
-        "*",
+        parentOrigin,
       );
     }
 

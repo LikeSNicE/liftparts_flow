@@ -30,7 +30,7 @@ const matchesCity = (displayName: string, city?: string) => {
   return variants.some((variant) => normalizedName.includes(variant));
 };
 
-const buildQueryVariants = (rawQuery: string) => {
+export const buildQueryVariants = (rawQuery: string) => {
   const trimmed = rawQuery.trim();
   const noCity = trimmed
     .replace(/^г\.\s*астана,?\s*/i, "")
