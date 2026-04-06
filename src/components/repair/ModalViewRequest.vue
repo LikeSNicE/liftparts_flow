@@ -1,40 +1,40 @@
 <script setup lang="ts">
-import type { Request, RequestForm } from "@/types/RequestTypes";
-import { Dialog, Dropdown, InputText, Button, Textarea } from "primevue";
+import type { RepairRequest, RepairRequestForm } from "@/types/RepairRequestTypes";
+import { Dialog, Dropdown, InputText, Button, Textarea, InputNumber } from "primevue";
 import { computed } from "vue";
 import {
   partOptions,
-  emergencyProblems,
-  statusOptions,
 } from "@/data/requestData";
+import { emergencyProblems } from "@/data/emergencyProblems";
+import { statusOptions } from "@/data/statusOptionsData";
 import { useRole } from "@/composables/useRole";
+import { useUserStore } from "@/stores/useUserStore";
+import { storeToRefs } from "pinia";
 import { useModalStore } from "@/stores/useModalStore";
-import { useRequestStore } from "@/stores/useRequestStore";
 
 const { requestForm, currentRequest } = defineProps<{
-  requestForm: RequestForm;
-  currentRequest: Request | null;
+  requestForm: RepairRequestForm;
+  currentRequest: RepairRequest | null;
 }>();
 
 const emit = defineEmits<{
-  (e: "reset-request-form"): void;
+  (e: "resetRequestForm"): void;
 }>();
 
 const modalStore = useModalStore();
-const requestStore = useRequestStore();
 
-const isModalVisible = computed(() => modalStore.modalState.editRequest);
+const isModalVisible = computed(() => modalStore.modalState.viewRepairRequest);
 
 const handleCloseModal = () => {
   if (currentRequest) {
-    emit("reset-request-form");
-    modalStore.closeModal("editRequest");
-    modalStore.closeModal("viewRequest");
+    emit("resetRequestForm");
+    modalStore.closeModal("viewRepairRequest");
   }
 };
+const { userData } = storeToRefs(useUserStore());
 
 const addViewPartRow = () => {
-  requestForm.parts.push({ partName: "", quantity: "1" });
+  requestForm.parts.push({ partName: "", quantity: 1 });
 };
 
 const removeViewPartRow = (index: number) => {
@@ -45,21 +45,17 @@ const removeViewPartRow = (index: number) => {
 
 const { can } = useRole();
 
-const handleUpdateRequest = async () => {
-  if (!currentRequest) {
-    console.error("currentRequest is null!");
-    return;
-  }
-
-  try {
-    await requestStore.updateRequest(currentRequest.id, requestForm);
-    handleCloseModal();
-  } catch (error) {
-    console.error("Ошибка при обновлении заявки:", error);
-  }
+const canEditRequest = (request: RepairRequest) => {
+  if (!request) return false;
+  return (
+    can(["admin", "mechanic", "warehouse_operator"]) ||
+    request.authorId === userData.value?.id
+  );
 };
 
-console.log("requestForm: ", requestForm);
+const handleOpenModalEditRequest = () => {
+  modalStore.openModal("editRepairRequest");
+};
 </script>
 
 <template>
@@ -68,7 +64,7 @@ console.log("requestForm: ", requestForm);
     @update:visible="handleCloseModal"
     modal
     :draggable="false"
-    header="Редактирование заявки"
+    header="Просмотр заявки"
     position="center"
     :closable="true"
     :style="{ width: '35rem' }"
@@ -85,7 +81,7 @@ console.log("requestForm: ", requestForm);
               ? 'planned-active'
               : 'planned-inactive'
           "
-          @click="requestForm.type = 'planned'"
+          disabled
         >
           Плановая
         </button>
@@ -97,7 +93,7 @@ console.log("requestForm: ", requestForm);
               ? 'emergency-active'
               : 'emergency-inactive'
           "
-          @click="requestForm.type = 'emergency'"
+          disabled
         >
           Аварийная
         </button>
@@ -121,14 +117,17 @@ console.log("requestForm: ", requestForm);
               option-value="value"
               class="flex-auto"
               placeholder="Деталь"
+              disabled
               show-clear
               filter
             />
-            <InputText
+            <InputNumber
               v-model="part.quantity"
               type="number"
-              min="1"
+              :min="1"
+              :max="1000"
               class="w-20"
+              disabled
               placeholder="Кол-во"
             />
             <Button
@@ -147,12 +146,14 @@ console.log("requestForm: ", requestForm);
           icon="pi pi-plus"
           class="p-button-text p-button-sm"
           @click="addViewPartRow"
+          disabled
         />
       </div>
 
       <div v-else class="flex flex-col gap-2">
         <label class="text-sm font-semibold text-(--title)">
-          ПРОБЛЕМА <span class="text-(--red)">*</span>
+          ПРОБЛЕМА
+          <span class="text-(--red)">*</span>
         </label>
         <div
           class="border border-(--border) rounded-lg p-3 max-h-64 overflow-y-auto"
@@ -168,6 +169,7 @@ console.log("requestForm: ", requestForm);
               :value="problem.value"
               v-model="requestForm.selectedProblems"
               class="w-4 h-4 text-(--red) rounded focus:ring-(--red) mt-0.5 shrink-0"
+              disabled
             />
             <label
               :for="'view-problem-' + problem.value"
@@ -191,6 +193,7 @@ console.log("requestForm: ", requestForm);
           v-model="requestForm.emergencyOtherProblem"
           placeholder="Опишите проблему..."
           class="w-full"
+          disabled
         />
       </div>
 
@@ -206,6 +209,7 @@ console.log("requestForm: ", requestForm);
           v-model="requestForm.objectAddress"
           class="w-full"
           placeholder="Например: ул. Ленина 42, лифт №7"
+          disabled
         />
       </div>
 
@@ -218,7 +222,7 @@ console.log("requestForm: ", requestForm);
           v-model="requestForm.comment"
           class="w-full"
           rows="3"
-          placeholder="Опишите проблему подробно..."
+          disabled
         />
         <span class="text-xs text-(--placeholder)">
           Необязательно, но помогает ускорить обработку заявки
@@ -237,21 +241,23 @@ console.log("requestForm: ", requestForm);
           option-value="value"
           class="w-full"
           placeholder="Выберите статус"
+          disabled
         />
       </div>
 
       <div class="flex justify-end gap-2 mt-6">
         <Button
+          v-if="canEditRequest(currentRequest!)"
           type="button"
-          label="Отмена"
-          severity="secondary"
-          @click="handleCloseModal"
+          label="Редактировать"
+          class="edit-btn"
+          @click="handleOpenModalEditRequest"
         />
         <Button
           type="button"
-          label="Сохранить"
-          class="save-btn"
-          @click.stop="handleUpdateRequest"
+          label="Закрыть"
+          severity="secondary"
+          @click="handleCloseModal"
         />
       </div>
     </div>
@@ -260,6 +266,10 @@ console.log("requestForm: ", requestForm);
 
 <style scoped>
 /* Отключаем cursor для кнопок внутри переключателя */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 /* Кнопка "Плановая" - активная (синяя) */
 .planned-active {

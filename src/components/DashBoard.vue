@@ -1,16 +1,21 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { useRequestStore } from "@/stores/useRequestStore";
+import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { storeToRefs } from "pinia";
 import { formatDate } from "@/utils/formatDate";
-import type { Request, RequestStatus, RequestForm } from "@/types/RequestTypes";
-import { statusOptions } from "@/data/requestData";
-import ModalViewRequest from "@/components/ModalViewRequest.vue";
-import ModalEditRequest from "@/components/ModalEditRequest.vue";
+import type {
+  RepairRequest,
+  RepairRequestForm,
+} from "@/types/RepairRequestTypes";
+import ModalViewRequest from "@/components/repair/ModalViewRequest.vue";
+import ModalEditRequest from "@/components/repair/ModalEditRequest.vue";
+import { getStatusColor } from "@/utils/getStatusColor";
+import { getStatusLabel } from "@/utils/getStatusLabel";
+import type { StatusOption } from "@/data/statusOptionsData";
 
-const requestStore = useRequestStore();
+const requestStore = useRepairRequestStore();
 const userStore = useUserStore();
 const modalStore = useModalStore();
 
@@ -24,9 +29,15 @@ onMounted(async () => {
 // Статистика по статусам
 const stats = computed(() => {
   const total = requestList.value.length;
-  const active = requestList.value.filter((r) => r.status === "pending").length;
-  const inProgress = requestList.value.filter((r) => r.status === "in_progress").length;
-  const completed = requestList.value.filter((r) => r.status === "completed").length;
+  const active = requestList.value.filter(
+    (r: RepairRequest) => r.status === "pending",
+  ).length;
+  const inProgress = requestList.value.filter(
+    (r) => r.status === "in_progress",
+  ).length;
+  const completed = requestList.value.filter(
+    (r) => r.status === "completed",
+  ).length;
 
   return { total, active, inProgress, completed };
 });
@@ -34,31 +45,26 @@ const stats = computed(() => {
 // Последние 5 заявок
 const recentRequests = computed(() => {
   return [...requestList.value]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    )
     .slice(0, 5);
 });
 
-// Получить цвет статуса
-const getStatusColor = (status: RequestStatus) => {
-  return (
-    statusOptions.find((s) => s.value === status)?.color ||
-    "bg-gray-100 text-gray-700"
-  );
-};
-
 // Получить отображаемое название статуса
-const getStatusLabel = (status: RequestStatus) => {
-  return statusOptions.find((s) => s.value === status)?.label || status;
-};
+// const getStatusLabel = (status: RepairRequestStatus) => {
+//   return statusOptions.find((s) => s.value === status)?.label || status;
+// };
 
 // Текущая заявка для просмотра/редактирования
-const currentRequest = ref<Request | null>(null);
+const currentRequest = ref<RepairRequest | null>(null);
 
 // Форма заявки
-const requestForm = ref<RequestForm | null>(null);
+const requestForm = ref<RepairRequestForm | null>(null);
 
 // Открыть модальное окно для просмотра/редактирования
-const openViewModal = (request: Request) => {
+const openViewModal = (request: RepairRequest) => {
   currentRequest.value = request;
   requestForm.value = {
     author: request.author,
@@ -72,7 +78,7 @@ const openViewModal = (request: Request) => {
     selectedProblems: request.selectedProblems,
     emergencyOtherProblem: request.emergencyOtherProblem,
   };
-  modalStore.openModal("viewRequest");
+  modalStore.openModal("viewRepairRequest");
 };
 
 const resetRequestForm = () => {
@@ -107,7 +113,9 @@ const handleDeleteRequest = async (requestId: number) => {
             <div class="stats-icon-bg blue">
               <i class="pi pi-clock text-(--blue)"></i>
             </div>
-            <span class="text-sm font-medium text-(--text)">Активные заявки</span>
+            <span class="text-sm font-medium text-(--text)"
+              >Активные заявки</span
+            >
           </div>
         </div>
         <div class="text-3xl font-bold text-(--title)">{{ stats.active }}</div>
@@ -124,8 +132,12 @@ const handleDeleteRequest = async (requestId: number) => {
             <span class="text-sm font-medium text-(--text)">В работе</span>
           </div>
         </div>
-        <div class="text-3xl font-bold text-(--title)">{{ stats.inProgress }}</div>
-        <div class="text-xs text-(--placeholder) mt-1">В процессе выполнения</div>
+        <div class="text-3xl font-bold text-(--title)">
+          {{ stats.inProgress }}
+        </div>
+        <div class="text-xs text-(--placeholder) mt-1">
+          В процессе выполнения
+        </div>
       </div>
 
       <!-- Выполнено -->
@@ -138,7 +150,9 @@ const handleDeleteRequest = async (requestId: number) => {
             <span class="text-sm font-medium text-(--text)">Выполнено</span>
           </div>
         </div>
-        <div class="text-3xl font-bold text-(--title)">{{ stats.completed }}</div>
+        <div class="text-3xl font-bold text-(--title)">
+          {{ stats.completed }}
+        </div>
         <div class="text-xs text-(--placeholder) mt-1">Завершённые заявки</div>
       </div>
 
@@ -159,9 +173,14 @@ const handleDeleteRequest = async (requestId: number) => {
 
     <!-- Последние заявки -->
     <div class="requests-table-card">
-      <div class="flex items-center justify-between p-5 border-b border-(--border)">
+      <div
+        class="flex items-center justify-between p-5 border-b border-(--border)"
+      >
         <h2 class="text-lg font-semibold text-(--title)">Последние заявки</h2>
-        <router-link to="/requests" class="text-sm text-(--blue) hover:underline font-medium">
+        <router-link
+          to="/repair-requests"
+          class="text-sm text-(--blue) hover:underline font-medium"
+        >
           Все заявки <i class="pi pi-arrow-right text-xs ml-1"></i>
         </router-link>
       </div>
@@ -215,7 +234,10 @@ const handleDeleteRequest = async (requestId: number) => {
               </td>
             </tr>
             <tr v-if="recentRequests.length === 0">
-              <td :colspan="6" class="px-5 py-12 text-center text-(--placeholder)">
+              <td
+                :colspan="6"
+                class="px-5 py-12 text-center text-(--placeholder)"
+              >
                 <i class="pi pi-inbox text-4xl mb-3 block"></i>
                 Список заявок пуст
               </td>
@@ -227,14 +249,18 @@ const handleDeleteRequest = async (requestId: number) => {
 
     <!-- Модальное окно просмотра заявки -->
     <ModalViewRequest
-      v-if="modalStore.modalState.viewRequest && requestForm && currentRequest"
+      v-if="
+        modalStore.modalState.viewRepairRequest && requestForm && currentRequest
+      "
       :requestForm="requestForm"
       :current-request="currentRequest"
       @reset-request-form="resetRequestForm"
     />
 
     <ModalEditRequest
-      v-if="modalStore.modalState.editRequest && requestForm && currentRequest"
+      v-if="
+        modalStore.modalState.editRepairRequest && requestForm && currentRequest
+      "
       :requestForm="requestForm"
       :current-request="currentRequest"
       @reset-request-form="resetRequestForm"
