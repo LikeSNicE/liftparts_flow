@@ -141,6 +141,21 @@ const handleLogout = () => {
             <span class="font-medium">Заявки по запчастям</span>
           </router-link>
         </li>
+
+        <li
+          v-if="can(['admin', 'warehouse_operator', 'mechanic'])"
+          :class="
+            isActiveRoute('/interactive-map')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
+          class="rounded-lg px-4 py-3 transition-colors"
+        >
+          <router-link to="/interactive-map" class="flex items-center gap-3">
+            <i class="pi pi-map"></i>
+            <span class="font-medium">Интерактивная карта</span>
+          </router-link>
+        </li>
       </ul>
 
       <ul v-if="can('admin')">

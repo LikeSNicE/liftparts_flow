@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивная карта лифтов</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      padding: 10px 12px;
+      min-width: 220px;
+      font: 13px/1.4 "Segoe UI", Tahoma, sans-serif;
+    }
+
+    .panel h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 4px 0;
+    }
+
+    .request-icon {
+      border-radius: 50%;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    }
+
+    .request-icon {
+      background: #2563eb;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="panel">
+    <h3>Карта заявок</h3>
+    <div class="row"><span>Заявки</span><strong id="requests-count">0</strong></div>
+    <div class="row"><span class="request-icon"></span><span>Заявки из системы</span></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map("map").setView([51.127, 71.43], 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
+
+    const requestsLayer = L.layerGroup().addTo(map);
+    const requestMarkersById = new Map();
+
+    const requestsCount = document.getElementById("requests-count");
+
+    function setRequestsCount(value) {
+      requestsCount.textContent = String(value);
+    }
+
+    function addRequestMarker(request) {
+      const lat = Number(request.latitude);
+      const lon = Number(request.longitude);
+      if (Number.isNaN(lat) || Number.isNaN(lon)) {
+        return;
+      }
+
+      const requestId = String(request.id || request.request_id || `${lat}:${lon}:${request.address || ""}`);
+      const existingMarker = requestMarkersById.get(requestId);
+      if (existingMarker) {
+        requestsLayer.removeLayer(existingMarker);
+        requestMarkersById.delete(requestId);
+      }
+
+      const marker = L.circleMarker([lat, lon], {
+        radius: 7,
+        color: "#1d4ed8",
+        fillColor: "#2563eb",
+        fillOpacity: 0.9,
+        weight: 2,
+      });
+
+      const address = request.address || "Адрес не указан";
+      const description = request.description || "Без описания";
+      marker.bindPopup(`<strong>${address}</strong><br/>${description}`);
+      marker.addTo(requestsLayer);
+      requestMarkersById.set(requestId, marker);
+
+      return marker;
+    }
+
+    function syncRequests(requests) {
+      requestsLayer.clearLayers();
+      requestMarkersById.clear();
+      (Array.isArray(requests) ? requests : []).forEach(addRequestMarker);
+      setRequestsCount(requestsLayer.getLayers().length);
+    }
+
+    function focusRequest(request) {
+      const requestId = String(request.id || request.request_id || "");
+      let marker = requestMarkersById.get(requestId);
+
+      if (!marker) {
+        marker = addRequestMarker(request);
+        setRequestsCount(requestsLayer.getLayers().length);
+      }
+
+      if (!marker) {
+        return;
+      }
+
+      const latLng = marker.getLatLng();
+      map.setView([latLng.lat, latLng.lng], 16);
+      marker.openPopup();
+    }
+
+    window.addEventListener("message", (event) => {
+      const type = event?.data?.type;
+      if (type === "SYNC_REQUESTS") {
+        syncRequests(event.data.data);
+      }
+      if (type === "NEW_REQUEST") {
+        addRequestMarker(event.data.data || {});
+        setRequestsCount(requestsLayer.getLayers().length);
+      }
+      if (type === "FOCUS_REQUEST") {
+        focusRequest(event.data.data || {});
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      window.parent?.postMessage({ type: "MAP_READY" }, "*");
+    });
+  </script>
+</body>
+</html>

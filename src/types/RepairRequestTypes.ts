@@ -1,6 +1,9 @@
 // Типы статусов заявки
 
-import type { PartOption } from "./PartsRequestTypes";
+export interface PartOption {
+  partName: string;
+  quantity: number;
+}
 
 // Типы заявок
 export type RepairRequestType = "planned" | "emergency";
@@ -25,6 +28,11 @@ export interface RepairRequest {
   selectedProblems?: string[];
   emergencyOtherProblem?: string;
   objectAddress: string;
+  city?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  monitorRequestId?: string;
+  monitorSyncStatus?: "pending" | "synced" | "failed";
   comment?: string;
   createdAt: string;
   updatedAt?: string;

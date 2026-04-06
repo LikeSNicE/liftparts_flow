@@ -7,8 +7,7 @@ import {
   Textarea,
   InputNumber,
 } from "primevue";
-import type { RepairRequestForm } from "@/types/RepairRequestTypes";
-// import type { PartOption } from "@/types/PartsRequestTypes";
+import type { PartOption, RepairRequestForm } from "@/types/RepairRequestTypes";
 import type { Elevator } from "@/types/ElevatorTypes";
 import { partOptions } from "@/data/requestData";
 import { emergencyProblems } from "@/data/emergencyProblems";
@@ -16,7 +15,13 @@ import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
-import { ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
+import {
+  useAddressAutocomplete,
+  type AddressSuggestion,
+} from "@/composables/useAddressAutocomplete";
+
+const CITY_OPTIONS = ["Астана", "Алматы", "Шымкент"];
 
 const requestStore = useRepairRequestStore();
 const modalStore = useModalStore();
@@ -27,7 +32,126 @@ const { requestForm, elevatorList } = defineProps<{
   elevatorList: Elevator[];
 }>();
 
+if (!requestForm.city) {
+  requestForm.city = "Астана";
+}
+
 const selectedParts = ref<PartOption[]>([{ partName: "", quantity: 1 }]);
+const addressError = ref("");
+const selectedAddress = ref<AddressSuggestion | null>(null);
+const isMapDialogVisible = ref(false);
+const isSuggestionsVisible = ref(false);
+let addressSearchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const {
+  suggestions: addressSuggestions,
+  isLoading: addressLoading,
+  searchAddresses,
+  clearSuggestions,
+} = useAddressAutocomplete();
+
+const hasAddressSuggestions = computed(
+  () => isSuggestionsVisible.value && addressSuggestions.value.length > 0,
+);
+
+const handleAddressInput = () => {
+  selectedAddress.value = null;
+  requestForm.latitude = null;
+  requestForm.longitude = null;
+  addressError.value = "";
+
+  if (addressSearchTimeout) {
+    clearTimeout(addressSearchTimeout);
+  }
+
+  addressSearchTimeout = setTimeout(async () => {
+    await searchAddresses(requestForm.objectAddress || "", requestForm.city);
+    isSuggestionsVisible.value = addressSuggestions.value.length > 0;
+
+    if (
+      (requestForm.objectAddress || "").trim().length >= 3 &&
+      addressSuggestions.value.length === 0
+    ) {
+      addressError.value = "Адреса не найдены";
+    }
+  }, 300);
+};
+
+const handleAddressBlur = () => {
+  setTimeout(() => {
+    isSuggestionsVisible.value = false;
+  }, 120);
+};
+
+const handleCityChange = () => {
+  requestForm.objectAddress = "";
+  requestForm.latitude = null;
+  requestForm.longitude = null;
+  selectedAddress.value = null;
+  addressError.value = "";
+  isSuggestionsVisible.value = false;
+  clearSuggestions();
+
+  if (addressSearchTimeout) {
+    clearTimeout(addressSearchTimeout);
+    addressSearchTimeout = null;
+  }
+};
+
+const applyAddressSuggestion = (suggestion: AddressSuggestion) => {
+  selectedAddress.value = suggestion;
+  requestForm.objectAddress = suggestion.displayName;
+  requestForm.latitude = suggestion.latitude;
+  requestForm.longitude = suggestion.longitude;
+  isSuggestionsVisible.value = false;
+  clearSuggestions();
+  addressError.value = "";
+};
+
+const openMapPicker = () => {
+  isMapDialogVisible.value = true;
+};
+
+const closeMapPicker = () => {
+  isMapDialogVisible.value = false;
+};
+
+const handleMapMessage = (event: MessageEvent) => {
+  if (event.data?.type !== "ADDRESS_SELECTED") {
+    return;
+  }
+
+  const payload = event.data.data;
+  if (!payload) {
+    return;
+  }
+
+  const latitude = Number(payload.lat);
+  const longitude = Number(payload.lon);
+  const address = String(payload.address || "");
+
+  if (Number.isNaN(latitude) || Number.isNaN(longitude) || !address.trim()) {
+    return;
+  }
+
+  requestForm.objectAddress = address;
+  requestForm.latitude = latitude;
+  requestForm.longitude = longitude;
+  selectedAddress.value = {
+    displayName: address,
+    latitude,
+    longitude,
+  };
+
+  clearSuggestions();
+  isSuggestionsVisible.value = false;
+  addressError.value = "";
+  closeMapPicker();
+};
+
+if (typeof window !== "undefined") {
+  window.addEventListener("message", handleMapMessage);
+}
 
 const addPartRow = () => {
   selectedParts.value.push({ partName: "", quantity: 1 });
@@ -50,8 +174,21 @@ const resetRequestForm = () => {
   requestForm.type = "planned";
   requestForm.parts = [];
 
+  requestForm.city = "Астана";
+  requestForm.latitude = null;
+  requestForm.longitude = null;
   requestForm.objectAddress = "";
   requestForm.comment = "";
+
+  clearSuggestions();
+  isSuggestionsVisible.value = false;
+  addressError.value = "";
+  selectedAddress.value = null;
+
+  if (addressSearchTimeout) {
+    clearTimeout(addressSearchTimeout);
+    addressSearchTimeout = null;
+  }
 
   selectedParts.value.splice(0, selectedParts.value.length);
   selectedParts.value.push({ partName: "", quantity: 1 });
@@ -64,6 +201,7 @@ const resetRequestForm = () => {
 const onModalVisibilityChange = (value: boolean) => {
   if (!value) {
     resetRequestForm();
+    closeMapPicker();
     modalStore.closeModal("createRepairRequest");
     return;
   }
@@ -71,6 +209,20 @@ const onModalVisibilityChange = (value: boolean) => {
 
 // Создание заявки
 const handleCreateRequest = async () => {
+  requestForm.objectAddress = (requestForm.objectAddress || "").trim();
+
+  if (
+    !requestForm.objectAddress ||
+    requestForm.latitude === null ||
+    requestForm.latitude === undefined ||
+    requestForm.longitude === null ||
+    requestForm.longitude === undefined
+  ) {
+    addressError.value =
+      "Выберите адрес из подсказок, чтобы заявка и карта были синхронизированы";
+    return;
+  }
+
   if (requestForm.type === "emergency") {
     // Заменяем "other" на текст из input
     const otherText = emergencyOtherProblem.value.toLowerCase().trim();
@@ -88,11 +240,26 @@ const handleCreateRequest = async () => {
     requestForm.parts = selectedParts.value;
   }
 
-  console.log("requestForm: ", requestForm);
-  await requestStore.createRequest(requestForm);
-  resetRequestForm();
-  modalStore.closeModal("createRepairRequest");
+  try {
+    await requestStore.createRequest(requestForm);
+    resetRequestForm();
+    closeMapPicker();
+    modalStore.closeModal("createRepairRequest");
+  } catch (error) {
+    addressError.value = "Не удалось отправить заявку. Повторите попытку";
+    console.log("Ошибка отправки заявки:", error);
+  }
 };
+
+onBeforeUnmount(() => {
+  if (addressSearchTimeout) {
+    clearTimeout(addressSearchTimeout);
+  }
+
+  if (typeof window !== "undefined") {
+    window.removeEventListener("message", handleMapMessage);
+  }
+});
 </script>
 
 <template>
@@ -258,6 +425,20 @@ const handleCreateRequest = async () => {
         </div>
       </div>
 
+      <!-- Город -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-(--title)">
+          ГОРОД <span class="text-(--red)">*</span>
+        </label>
+        <Dropdown
+          v-model="requestForm.city"
+          :options="CITY_OPTIONS"
+          class="w-full"
+          placeholder="Выберите город"
+          @change="handleCityChange"
+        />
+      </div>
+
       <!-- Адрес объекта -->
       <div class="flex flex-col gap-2">
         <label
@@ -266,12 +447,55 @@ const handleCreateRequest = async () => {
         >
           АДРЕС ОБЪЕКТА <span class="text-(--red)">*</span>
         </label>
-        <InputText
-          id="createObjectAddress"
-          v-model="requestForm.objectAddress"
-          class="w-full"
-          placeholder="Например: ул. Ленина 42, лифт №7"
-        />
+        <div class="flex gap-2">
+          <InputText
+            id="createObjectAddress"
+            v-model="requestForm.objectAddress"
+            class="w-full"
+            placeholder="Начните вводить адрес и выберите вариант"
+            @input="handleAddressInput"
+            @focus="isSuggestionsVisible = addressSuggestions.length > 0"
+            @blur="handleAddressBlur"
+          />
+          <Button
+            type="button"
+            label="На карте"
+            icon="pi pi-map-marker"
+            severity="secondary"
+            @click="openMapPicker"
+          />
+        </div>
+
+        <div v-if="addressLoading" class="text-xs text-(--placeholder)">
+          Идет поиск адресов...
+        </div>
+
+        <div
+          v-if="hasAddressSuggestions"
+          class="border border-(--border) rounded-lg max-h-44 overflow-y-auto"
+        >
+          <button
+            v-for="suggestion in addressSuggestions"
+            :key="`${suggestion.latitude}-${suggestion.longitude}`"
+            type="button"
+            class="w-full text-left px-3 py-2 text-sm hover:bg-(--bg) transition-colors border-b border-(--border) last:border-b-0"
+            @click="applyAddressSuggestion(suggestion)"
+          >
+            {{ suggestion.displayName }}
+          </button>
+        </div>
+
+        <div
+          v-if="selectedAddress && requestForm.latitude && requestForm.longitude"
+          class="text-xs text-emerald-600"
+        >
+          Адрес зафиксирован. Координаты: {{ requestForm.latitude.toFixed(6) }},
+          {{ requestForm.longitude.toFixed(6) }}
+        </div>
+
+        <div v-if="addressError" class="text-xs text-(--red)">
+          {{ addressError }}
+        </div>
       </div>
 
       <!-- Комментарий -->
@@ -306,6 +530,23 @@ const handleCreateRequest = async () => {
         @click="handleCreateRequest"
       />
     </div>
+  </Dialog>
+
+  <Dialog
+    :visible="isMapDialogVisible"
+    @update:visible="closeMapPicker"
+    header="Выбор адреса на карте"
+    modal
+    :draggable="false"
+    :closable="true"
+    :style="{ width: '70rem', maxWidth: '95vw' }"
+  >
+    <iframe
+      src="/elevator-map-picker.html"
+      title="Выбор адреса"
+      class="w-full border-0 rounded-lg"
+      style="height: 65vh"
+    />
   </Dialog>
 </template>
 

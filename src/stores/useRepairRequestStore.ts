@@ -12,6 +12,7 @@ import type {
   NewRepairRequest,
 } from "@/types/RepairRequestTypes";
 import { api } from "@/service/apiInstance";
+import { elevatorMonitorApi } from "@/service/elevatorMonitorInstance";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 
 
@@ -38,16 +39,63 @@ export const useRepairRequestStore = defineStore("repair-requests", () => {
     }
   };
 
+  const syncRequestToMonitor = async (request: RepairRequest) => {
+    const payload = {
+      address: request.objectAddress,
+      latitude: request.latitude,
+      longitude: request.longitude,
+      elevator_id: request.liftId ? String(request.liftId) : undefined,
+      priority: request.type === "emergency" ? "high" : "medium",
+      description:
+        request.comment?.trim() ||
+        request.selectedProblems?.join(", ") ||
+        "Заявка на ремонт лифта",
+      contact: `${request.author} (ID: ${request.authorId})`,
+      city: request.city,
+    };
+
+    const { data } = await elevatorMonitorApi.post("/requests", payload);
+    return data?.data?.request_id as string | undefined;
+  };
+
   // Создать новую заявку
   const createRequest = async (requestForm: RepairRequestForm) => {
     const newRequest: NewRepairRequest = {
       ...requestForm,
       createdAt: new Date().toISOString(),
+      monitorSyncStatus: "pending",
     };
 
     try {
-      const { data } = await api.post("/repair-requests", newRequest);
+      const { data } = await api.post<RepairRequest>("/repair-requests", newRequest);
       requestList.value.push(data);
+
+      const requestId = data.id;
+
+      void syncRequestToMonitor(data)
+        .then((monitorRequestId) => {
+          const index = requestList.value.findIndex((item) => item.id === requestId);
+
+          if (index !== -1) {
+            requestList.value[index] = {
+              ...requestList.value[index],
+              monitorRequestId,
+              monitorSyncStatus: monitorRequestId ? "synced" : "failed",
+            };
+          }
+        })
+        .catch((syncError: unknown) => {
+          const errorMessage = getErrorMessage(syncError);
+          console.log("Ошибка синхронизации заявки с картой:", errorMessage);
+
+          const index = requestList.value.findIndex((item) => item.id === requestId);
+          if (index !== -1) {
+            requestList.value[index] = {
+              ...requestList.value[index],
+              monitorSyncStatus: "failed",
+            };
+          }
+        });
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
       console.log("Ошибка при создании заявки:", errorMessage);

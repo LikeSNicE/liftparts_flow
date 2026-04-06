@@ -92,6 +92,15 @@ const routes = [
               title: "Заявки на запчасти",
             },
           },
+          {
+            path: "/interactive-map",
+            component: () => import("@/pages/InteractiveMapPage.vue"),
+            meta: {
+              requiresAuth: true,
+              roles: ["admin", "warehouse_operator", "mechanic"],
+              title: "Интерактивная карта",
+            },
+          },
         ],
       },
     ],
