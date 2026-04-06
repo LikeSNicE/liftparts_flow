@@ -3,7 +3,7 @@ import type {
   RepairRequest,
   RepairRequestForm,
 } from "@/types/RepairRequestTypes";
-import { Dialog, Dropdown, InputText, Button, Textarea } from "primevue";
+import { Dialog, Dropdown, InputNumber, Button, Textarea } from "primevue";
 import { computed } from "vue";
 import { partOptions } from "@/data/requestData";
 import { emergencyProblems } from "@/data/emergencyProblems";
@@ -125,14 +125,17 @@ console.log("requestForm: ", requestForm);
               show-clear
               filter
             />
-            <InputNumber
-              v-model="part.quantity"
-              type="number"
-              :min="1"
-              :max="1000"
-              class="w-20"
-              placeholder="Кол-во"
-            />
+
+            <div class="w-20">
+              <InputNumber
+                v-model="part.quantity"
+                type="number"
+                :min="1"
+                :max="1000"
+                class="w-full"
+                placeholder="Кол-во"
+              />
+            </div>
             <Button
               v-if="requestForm.parts.length > 1"
               type="button"
@@ -307,5 +310,9 @@ console.log("requestForm: ", requestForm);
 .emergency-inactive:hover {
   background-color: #f1f5f9 !important;
   color: #dc2626 !important;
+}
+
+:deep(.p-inputnumber-input) {
+  width: 100%;
 }
 </style>

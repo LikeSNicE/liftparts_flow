@@ -1,10 +1,18 @@
 <script setup lang="ts">
-import type { RepairRequest, RepairRequestForm } from "@/types/RepairRequestTypes";
-import { Dialog, Dropdown, InputText, Button, Textarea, InputNumber } from "primevue";
-import { computed } from "vue";
+import type {
+  RepairRequest,
+  RepairRequestForm,
+} from "@/types/RepairRequestTypes";
 import {
-  partOptions,
-} from "@/data/requestData";
+  Dialog,
+  Dropdown,
+  InputText,
+  Button,
+  Textarea,
+  InputNumber,
+} from "primevue";
+import { computed } from "vue";
+import { partOptions } from "@/data/requestData";
 import { emergencyProblems } from "@/data/emergencyProblems";
 import { statusOptions } from "@/data/statusOptionsData";
 import { useRole } from "@/composables/useRole";
@@ -315,5 +323,9 @@ button:disabled {
 .emergency-inactive:hover {
   background-color: #f1f5f9 !important;
   color: #dc2626 !important;
+}
+
+:deep(.p-inputnumber-input) {
+  width: 100%;
 }
 </style>

@@ -1,3 +1,4 @@
+divdiv
 <script setup lang="ts">
 import {
   Dialog,
@@ -335,37 +336,41 @@ onBeforeUnmount(() => {
         <label class="text-sm font-semibold text-(--title)">
           ДЕТАЛИ <span class="text-(--red)">*</span>
         </label>
-
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-2">
           <div
             v-for="(part, index) in selectedParts"
             :key="index"
-            class="flex items-start gap-2"
+            class="flex gap-2 items-center"
           >
-            <Dropdown
-              v-model="part.partName"
-              :options="partOptions"
-              option-label="label"
-              option-value="value"
-              class="flex-auto"
-              placeholder="Деталь"
-              show-clear
-              filter
-            />
-            <InputNumber
-              v-model="part.quantity"
-              type="number"
-              :min="1"
-              :max="1000"
-              class="w-20"
-              placeholder="Кол-во"
-              showButtons
-            />
+            <div class="flex-1">
+              <Dropdown
+                v-model="part.partName"
+                :options="partOptions"
+                option-label="label"
+                option-value="value"
+                class="w-full"
+                placeholder="Деталь"
+                show-clear
+                filter
+              />
+            </div>
+
+            <div class="w-32">
+              <InputNumber
+                v-model="part.quantity"
+                :min="1"
+                :max="1000"
+                placeholder="Кол-во"
+                showButtons
+                class="w-full"
+                :use-grouping="false"
+              />
+            </div>
             <Button
               v-if="selectedParts.length > 1"
               type="button"
               icon="pi pi-trash"
-              class="p-button-danger p-button-rounded p-button-text"
+              class="p-button-danger p-button-rounded p-button-text col-span-1"
               @click="removePartRow(index)"
             />
           </div>
@@ -447,11 +452,11 @@ onBeforeUnmount(() => {
         >
           АДРЕС ОБЪЕКТА <span class="text-(--red)">*</span>
         </label>
-        <div class="flex gap-2">
+        <div class="grid grid-cols-3 gap-2">
           <InputText
             id="createObjectAddress"
             v-model="requestForm.objectAddress"
-            class="w-full"
+            class="col-span-2 w-full"
             placeholder="Начните вводить адрес и выберите вариант"
             @input="handleAddressInput"
             @focus="isSuggestionsVisible = addressSuggestions.length > 0"
@@ -463,6 +468,7 @@ onBeforeUnmount(() => {
             icon="pi pi-map-marker"
             severity="secondary"
             @click="openMapPicker"
+            class="w-full"
           />
         </div>
 
@@ -486,7 +492,9 @@ onBeforeUnmount(() => {
         </div>
 
         <div
-          v-if="selectedAddress && requestForm.latitude && requestForm.longitude"
+          v-if="
+            selectedAddress && requestForm.latitude && requestForm.longitude
+          "
           class="text-xs text-emerald-600"
         >
           Адрес зафиксирован. Координаты: {{ requestForm.latitude.toFixed(6) }},
@@ -551,6 +559,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+:deep(.p-inputnumber-input) {
+  width: 100%;
+}
+
 /* Кнопка "Плановая" - активная (синяя) */
 .planned-active {
   background-color: #2563eb !important;

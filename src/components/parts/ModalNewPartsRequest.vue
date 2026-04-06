@@ -179,16 +179,6 @@ onMounted(() => {
               />
             </div>
             <div class="w-32">
-              <!-- <InputNumber
-                :model-value="part.quantity"
-                @update:model-value="updateQuantity(index, $event)"
-                :min="1"
-                :max="1000"
-                showButtons
-                class="w-full"
-                placeholder="Кол-во"
-                :use-grouping="false"
-              /> -->
               <InputNumber
                 v-model="part.quantity"
                 :min="1"
