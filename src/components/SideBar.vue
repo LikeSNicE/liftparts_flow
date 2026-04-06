@@ -60,7 +60,9 @@ const handleLogout = () => {
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto p-4 border-r border-(--border)">
+    <nav
+      class="flex flex-col flex-1 overflow-y-auto p-4 border-r border-(--border) gap-4"
+    >
       <ul class="list-none m-0 space-y-1">
         <li>
           <div
@@ -82,66 +84,66 @@ const handleLogout = () => {
             <span class="font-medium">Главная</span>
           </router-link>
         </li>
-        <li
-          :class="
-            isActiveRoute('/requests')
-              ? 'bg-(--blue) text-(--white)'
-              : 'hover:bg-(--blue) hover:text-(--white)'
-          "
-          class="rounded-lg px-4 py-3 transition-colors"
-        >
-          <router-link to="/requests" class="flex items-center gap-3">
-            <i class="pi pi-th-large"></i>
-            <span class="font-medium">Заявки</span>
-          </router-link>
-        </li>
 
         <li
           v-if="can(['admin', 'warehouse_operator'])"
           :class="
-            isActiveRoute('/parts')
+            isActiveRoute('/warehouse')
               ? 'bg-(--blue) text-(--white)'
               : 'hover:bg-(--blue) hover:text-(--white)'
           "
           class="rounded-lg px-4 py-3 transition-colors"
         >
-          <router-link to="/parts" class="flex items-center gap-3">
-            <i class="pi pi-box"></i>
-            <span class="font-medium">Каталог деталей</span>
-          </router-link>
-        </li>
-
-        <li
-          v-if="can(['admin', 'warehouse_operator'])"
-          :class="
-            isActiveRoute('/orders')
-              ? 'bg-(--blue) text-(--white)'
-              : 'hover:bg-(--blue) hover:text-(--white)'
-          "
-          class="rounded-lg px-4 py-3 transition-colors"
-        >
-          <router-link to="/orders" class="flex items-center gap-3">
-            <i class="pi pi-shopping-cart"></i>
-            <span class="font-medium">Заказы</span>
-          </router-link>
-        </li>
-
-        <li
-          :class="
-            isActiveRoute('/dashboard')
-              ? 'bg-(--blue) text-(--white)'
-              : 'hover:bg-(--blue) hover:text-(--white)'
-          "
-          class="rounded-lg px-4 py-3 transition-colors"
-        >
-          <router-link to="/dashboard" class="flex items-center gap-3">
-            <i class="pi pi-chart-line"></i>
-            <span class="font-medium">Дашборд</span>
+          <router-link to="/warehouse" class="flex items-center gap-3">
+            <i class="pi pi-warehouse"></i>
+            <span class="font-medium">Склад</span>
           </router-link>
         </li>
       </ul>
 
-      <ul v-if="can('admin')" class="mt-4">
+      <ul
+        class="list-none m-0 space-y-1"
+        v-if="can(['admin', 'mechanic', 'warehouse_operator'])"
+      >
+        <li>
+          <div
+            class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+          >
+            Заявки
+          </div>
+        </li>
+
+        <li
+          :class="
+            isActiveRoute('/repair-requests')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
+          class="rounded-lg px-4 py-3 transition-colors"
+        >
+          <router-link to="/repair-requests" class="flex items-center gap-3">
+            <i class="pi pi-th-large"></i>
+            <span class="font-medium">Заявки по ремонту</span>
+          </router-link>
+        </li>
+
+        <li
+          v-if="can(['admin', 'warehouse_operator', 'mechanic'])"
+          :class="
+            isActiveRoute('/parts-requests')
+              ? 'bg-(--blue) text-(--white)'
+              : 'hover:bg-(--blue) hover:text-(--white)'
+          "
+          class="rounded-lg px-4 py-3 transition-colors"
+        >
+          <router-link to="/parts-requests" class="flex items-center gap-3">
+            <i class="pi pi-wrench"></i>
+            <span class="font-medium">Заявки по запчастям</span>
+          </router-link>
+        </li>
+      </ul>
+
+      <ul v-if="can('admin')">
         <li>
           <div
             class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider"

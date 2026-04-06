@@ -7,7 +7,9 @@ import { computed } from "vue";
 const route = useRoute();
 
 // Показывать кнопку только на странице заявок
-const showAddButton = computed(() => route.path === "/requests");
+const showAddButton = computed(
+  () => route.path === "/repair-requests" || route.path === "/parts-requests",
+);
 </script>
 
 <template>

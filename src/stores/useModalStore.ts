@@ -2,17 +2,23 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 
 export type ModalType =
-  | "viewRequest"
-  | "createRequest"
-  | "editRequest"
-  | "deleteRequest";
+  | "viewRepairRequest"
+  | "createRepairRequest"
+  | "editRepairRequest"
+  | "deleteRepairRequest"
+  | "warehouseIncome"
+  | "createPartsRequest"
+  | "editPartsRequest"
 
 export const useModalStore = defineStore("modal", () => {
   const modalState = ref<Record<ModalType, boolean>>({
-    createRequest: false,
-    viewRequest: false,
-    editRequest: false,
-    deleteRequest: false,
+    createRepairRequest: false,
+    viewRepairRequest: false,
+    editRepairRequest: false,
+    deleteRepairRequest: false,
+    warehouseIncome: false,
+    createPartsRequest: false,
+    editPartsRequest: false,
   });
 
   const openModal = (type: ModalType) => {
@@ -25,10 +31,13 @@ export const useModalStore = defineStore("modal", () => {
 
   const closeAllModals = () => {
     modalState.value = {
-      createRequest: false,
-      viewRequest: false,
-      editRequest: false,
-      deleteRequest: false,
+      createRepairRequest: false,
+      viewRepairRequest: false,
+      editRepairRequest: false,
+      deleteRepairRequest: false,
+      warehouseIncome: false,
+      createPartsRequest: false,
+      editPartsRequest: false,
     };
   };
 

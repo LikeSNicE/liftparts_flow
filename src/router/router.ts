@@ -5,7 +5,6 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { type UserRole } from "@/types/UserTypes";
 import { useUserStore } from "@/stores/useUserStore";
 
-
 export interface RouteMeta {
   requiresAuth?: boolean;
   roles?: UserRole[];
@@ -61,9 +60,13 @@ const routes = [
             },
           },
           {
-            path: "/requests",
-            component: () => import("@/pages/RequestsPage.vue"),
-            meta: { requiresAuth: true, roles: ["admin", "mechanic", "warehouse_operator"], title: "Заявки" },
+            path: "/repair-requests",
+            component: () => import("@/pages/RepairRequestsPage.vue"),
+            meta: {
+              requiresAuth: true,
+              roles: ["admin", "mechanic", "warehouse_operator"],
+              title: "Заявки по ремонту",
+            },
           },
           {
             path: "/users",
@@ -74,6 +77,20 @@ const routes = [
             path: "/settings",
             component: () => import("@/pages/SettingsPage.vue"),
             meta: { requiresAuth: true, title: "Настройки" },
+          },
+          {
+            path: "/warehouse",
+            component: () => import("@/pages/WarehousePage.vue"),
+            meta: { requiresAuth: true, title: "Склад" },
+          },
+          {
+            path: "/parts-requests",
+            component: () => import("@/pages/PartsRequestsPage.vue"),
+            meta: {
+              requiresAuth: true,
+              roles: ["admin", "warehouse_operator", "mechanic"],
+              title: "Заявки на запчасти",
+            },
           },
         ],
       },
@@ -124,7 +141,15 @@ router.beforeEach((to, _from, next) => {
     const userRole = userStore.userData?.userrole;
     const allowedRoles = to.meta.roles as UserRole[];
 
+    console.log('🔍 Route Guard Debug:', {
+      path: to.path,
+      userRole,
+      allowedRoles,
+      hasAccess: userRole && allowedRoles.includes(userRole)
+    });
+
     if (!userRole || !allowedRoles.includes(userRole)) {
+      console.log('❌ Access denied, redirecting to home');
       next({ path: "/" }); // Перенаправляем на главную если нет доступа
       return;
     }

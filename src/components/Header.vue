@@ -18,8 +18,19 @@ const headerTitle = computed(() => {
 });
 
 // Обработчик клика по кнопке
-const handleCreateRequest = () => {
-  modalStore.openModal("createRequest");
+const handleHeaderBtn = () => {
+  switch (route.path) {
+    case "/repair-requests":
+      modalStore.openModal("createRepairRequest");
+      break;
+    case "/parts-requests":
+      modalStore.openModal("createPartsRequest");
+      break;
+    default:
+      // На всякий случай, если кнопка будет видна на других страницах
+      console.warn("Неизвестный маршрут для создания заявки:", route.path);
+      break;
+  }
 };
 </script>
 
@@ -32,10 +43,10 @@ const handleCreateRequest = () => {
     <Button
       v-if="showAddButton"
       type="button"
-      label="Создать заявку"
+      :label="`Создать ${route.meta.title}`"
       icon="pi pi-plus-circle"
       class="create-request-btn"
-      @click="handleCreateRequest"
+      @click="handleHeaderBtn"
     />
   </header>
 </template>
@@ -54,6 +65,7 @@ const handleCreateRequest = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-transform: lowercase;
 }
 
 .create-request-btn:hover {

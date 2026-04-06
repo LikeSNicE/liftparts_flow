@@ -1,37 +1,28 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+// import type {
+//   Request,
+//   RequestForm,
+//   RepairRequestStatus,
+//   NewRequest,
+// } from "@/types/RepairRepairRepairRequestTypes";
 import type {
-  Request,
-  RequestForm,
-  RequestStatus,
-  NewRequest,
-} from "@/types/RequestTypes";
+  RepairRequestForm,
+  RepairRequest,
+  NewRepairRequest,
+} from "@/types/RepairRequestTypes";
 import { api } from "@/service/apiInstance";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 
-export const useRequestStore = defineStore("requests", () => {
+
+export const useRepairRequestStore = defineStore("repair-requests", () => {
   // Список заявок
-  const requestList = ref<Request[]>([
-    // {
-    //   id: 1,
-    //   title: "Замена троса лебедки",
-    //   author: "Иванов П.С.",
-    //   authorId: 1,
-    //   status: "pending",
-    //   liftId: "ELT-001",
-    //   type: "planned",
-    //   partName: "Трос лебедки 8мм",
-    //   quantity: 2,
-    //   objectAddress: "ул. Ленина 42, лифт №7",
-    //   comment: "Износ троса более 50%",
-    //   createdAt: "2026-03-20T10:00:00",
-    // },
-  ]);
+  const requestList = ref<RepairRequest[]>([]);
 
   // Получить все заявки
   const getRequests = async () => {
     try {
-      const { data } = await api.get<Request[]>("/requests");
+      const { data } = await api.get<RepairRequest[]>("/repair-requests");
 
       if (!data || !Array.isArray(data)) {
         throw new Error("Некорректный формат данных от сервера");
@@ -48,14 +39,14 @@ export const useRequestStore = defineStore("requests", () => {
   };
 
   // Создать новую заявку
-  const createRequest = async (requestForm: RequestForm) => {
-    const newRequest: NewRequest = {
+  const createRequest = async (requestForm: RepairRequestForm) => {
+    const newRequest: NewRepairRequest = {
       ...requestForm,
       createdAt: new Date().toISOString(),
     };
 
     try {
-      const { data } = await api.post("/requests", newRequest);
+      const { data } = await api.post("/repair-requests", newRequest);
       requestList.value.push(data);
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
@@ -70,9 +61,9 @@ export const useRequestStore = defineStore("requests", () => {
   // Обновить заявку
   const updateRequest = async (
     id: number,
-    requestForm: Partial<RequestForm>,
+    requestForm: Partial<RepairRequestForm>,
   ) => {
-    const { data } = await api.patch(`/requests/${id}`, requestForm);
+    const { data } = await api.patch(`/repair-requests/${id}`, requestForm);
 
     const index = requestList.value.findIndex((r) => r.id === id);
     if (index !== -1) {
@@ -108,9 +99,12 @@ export const useRequestStore = defineStore("requests", () => {
   };
 
   // Обновить статус заявки
-  const updateRequestStatus = async (id: number, status: RequestStatus) => {
-    await updateRequest(id, { status });
-  };
+  // const updateRepairRequestStatus = async (
+  //   id: number,
+  //   status: StatusOption,
+  // ) => {
+  //   await updateRequest(id, { status });
+  // };
 
   return {
     requestList,
@@ -119,6 +113,6 @@ export const useRequestStore = defineStore("requests", () => {
     updateRequest,
     deleteRequest,
     getRequestById,
-    updateRequestStatus,
+    // updateRepairRequestStatus,
   };
 });

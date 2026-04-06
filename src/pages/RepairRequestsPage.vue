@@ -4,22 +4,27 @@ import { ref, onMounted, computed } from "vue";
 import { InputText } from "primevue";
 import { Dropdown } from "primevue";
 
-import type { Request, RequestStatus, RequestForm } from "@/types/RequestTypes";
-import { useRequestStore } from "@/stores/useRequestStore";
+import type {
+  RepairRequest,
+  RepairRequestForm,
+} from "@/types/RepairRequestTypes";
+import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
 import { useRole } from "@/composables/useRole";
 import { formatDate } from "@/utils/formatDate";
 import { useElevatorStore } from "@/stores/useElevatorStore";
-import { statusOptions } from "@/data/requestData";
-import ModalNewRequest from "@/components/ModalNewRequest.vue";
-import ModalViewRequest from "@/components/ModalViewRequest.vue";
+import { statusOptions } from "@/data/statusOptionsData";
+import ModalNewRequest from "@/components/repair/ModalNewRequest.vue";
+import ModalViewRequest from "@/components/repair/ModalViewRequest.vue";
 import { useModalStore } from "@/stores/useModalStore";
-import ModalEditRequest from "@/components/ModalEditRequest.vue";
+import ModalEditRequest from "@/components/repair/ModalEditRequest.vue";
+import { getStatusColor } from "@/utils/getStatusColor";
+import { getStatusLabel } from "@/utils/getStatusLabel";
 
 type ViewMode = "table" | "list";
 
-const requestStore = useRequestStore();
+const requestStore = useRepairRequestStore();
 const userStore = useUserStore();
 const elevatorStore = useElevatorStore();
 const { can } = useRole();
@@ -51,7 +56,14 @@ const searchQuery = ref("");
 const selectedStatus = ref("");
 
 // Вид отображения: 'table' или 'list'
-const viewMode = ref<ViewMode>("table");
+const viewMode = ref<ViewMode>(
+  (localStorage.getItem("requestsViewMode") as ViewMode) || "table",
+);
+
+const changeViewMode = (mode: ViewMode) => {
+  localStorage.setItem("requestsViewMode", mode);
+  viewMode.value = mode;
+};
 
 // Итоговая фильтрация (поиск + статус)
 const filteredRequests = computed(() => {
@@ -67,6 +79,7 @@ const filteredRequests = computed(() => {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(
       (r) =>
+        r.id.toString().toLowerCase().includes(query) ||
         r.author.toLowerCase().includes(query) ||
         r.liftId.toString().toLowerCase().includes(query),
     );
@@ -76,12 +89,12 @@ const filteredRequests = computed(() => {
 });
 
 // Текущая заявка для просмотра/ редактирования
-const currentRequest = ref<Request | null>(null);
+const currentRequest = ref<RepairRequest | null>(null);
 
 // форма заявки
-const createRequestEmptyForm = (): RequestForm => ({
-  author: "",
-  authorId: 0,
+const createRequestEmptyForm = (): RepairRequestForm => ({
+  author: userData.value?.username || "",
+  authorId: userData.value?.id || 0,
   status: "pending",
   liftId: 0,
   type: "planned",
@@ -92,7 +105,7 @@ const createRequestEmptyForm = (): RequestForm => ({
   emergencyOtherProblem: "",
 });
 
-const requestForm = ref<RequestForm>(createRequestEmptyForm());
+const requestForm = ref<RepairRequestForm>(createRequestEmptyForm());
 
 const resetRequestForm = () => {
   requestForm.value = {
@@ -110,7 +123,7 @@ const resetRequestForm = () => {
 };
 
 // Открыть модальное окно для просмотра/редактирования
-const openViewModal = (request: Request) => {
+const openViewModal = (request: RepairRequest) => {
   currentRequest.value = request;
 
   requestForm.value = {
@@ -126,212 +139,192 @@ const openViewModal = (request: Request) => {
     emergencyOtherProblem: request.emergencyOtherProblem,
   };
 
-  modalStore.openModal("viewRequest");
+  modalStore.openModal("viewRepairRequest");
 };
 
 // Удаление заявки из списка заявок
 const handleDeleteRequest = async (requestId: number) => {
   requestStore.deleteRequest(requestId);
 };
-
-// Получить отображаемое название статуса
-const getStatusLabel = (status: RequestStatus) => {
-  return statusOptions.find((s) => s.value === status)?.label || status;
-};
-
-// Получить цвет статуса
-const getStatusColor = (status: RequestStatus) => {
-  return (
-    statusOptions.find((s) => s.value === status)?.color ||
-    "bg-gray-100 text-gray-700"
-  );
-};
 </script>
 
 <template>
-  <div class="requests-page flex flex-col gap-6">
-    <!-- Карточка со списком заявок -->
-    <div class="requests-card bg-white rounded-lg p-6 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-(--title)">Список заявок</h2>
+  <!-- Карточка со списком заявок -->
+  <div class="bg-white rounded-lg p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-4">
+      <h5 class="font-semibold text-(--title)">Список заявок по ремонту</h5>
 
-        <div class="flex items-center gap-2">
-          <!-- Переключатель вида -->
-          <button
-            type="button"
-            class="view-mode-btn"
-            :class="viewMode === 'table' ? 'active' : ''"
-            @click="viewMode = 'table'"
-            title="Таблица"
-          >
-            <i class="pi pi-table"></i>
-          </button>
-          <button
-            type="button"
-            class="view-mode-btn"
-            :class="viewMode === 'list' ? 'active' : ''"
-            @click="viewMode = 'list'"
-            title="Список"
-          >
-            <i class="pi pi-list"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Поиск и фильтры -->
-      <div class="flex gap-4 mb-4">
-        <div class="flex-auto">
-          <InputText
-            v-model="searchQuery"
-            placeholder="Поиск по автору или ID лифта..."
-            class="w-full"
-          />
-        </div>
-        <Dropdown
-          v-model="selectedStatus"
-          :options="statusOptions"
-          option-label="label"
-          option-value="value"
-          placeholder="Статус"
-          class="w-48"
-        />
-      </div>
-
-      <!-- Вид: Таблица -->
-      <div v-if="viewMode === 'table'" class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="text-left bg-(--bg) text-(--text)">
-              <th class="px-4 py-3 font-semibold rounded-tl-lg">№</th>
-              <th class="px-4 py-3 font-semibold">
-                Дата создания
-              </th>
-
-              <th class="px-4 py-3 font-semibold">ID работника</th>
-              <th class="px-4 py-3 font-semibold">ID лифта</th>
-              <th class="px-4 py-3 font-semibold">Статус</th>
-
-              <th class="px-4 py-3 font-semibold rounded-tr-lg">Убрать</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="request in filteredRequests"
-              :key="request.id"
-              class="border-t border-(--border) hover:bg-(--bg) cursor-pointer"
-              @click="openViewModal(request)"
-            >
-              <td class="px-4 py-3 text-(--text)">
-                <span class="font-semibold">{{ request.id }}</span>
-              </td>
-              <td class="px-4 py-3 text-(--text) text-sm">
-                {{ formatDate(request.createdAt) }}
-              </td>
-
-              <td class="px-4 py-3 text-(--text)">
-                {{ request.authorId }}
-              </td>
-              <td class="px-4 py-3 text-(--text)">
-                <span>{{ request.liftId }}</span>
-              </td>
-
-              <td class="px-4 py-3">
-                <span
-                  class="px-3 py-1 rounded-full text-xs font-medium"
-                  :class="getStatusColor(request.status)"
-                >
-                  {{ getStatusLabel(request.status) }}
-                </span>
-              </td>
-
-              <td class="px-4 py-3 text-(--text) text-sm">
-                <button
-                  class="w-10 h-10 p-3 rounded-full hover:text-(--red) text-center"
-                  @click.stop="handleDeleteRequest(request.id)"
-                >
-                  <i class="pi pi-trash"></i>
-                </button>
-              </td>
-            </tr>
-            <tr v-if="filteredRequests.length === 0">
-              <td
-                :colspan="6"
-                class="px-4 py-8 text-center text-(--placeholder)"
-              >
-                Список заявок пуст
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Вид: Список -->
-      <div v-else class="flex flex-col gap-3">
-        <div
-          v-for="request in filteredRequests"
-          :key="request.id"
-          class="request-item bg-(--bg) rounded-lg p-4 hover:bg-gray-100 cursor-pointer transition-colors"
-          @click="openViewModal(request)"
+      <div class="flex items-center gap-2">
+        <!-- Переключатель вида -->
+        <button
+          type="button"
+          class="view-mode-btn"
+          :class="viewMode === 'table' ? 'active' : ''"
+          @click="changeViewMode('table')"
+          title="Таблица"
         >
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex-auto">
-              <h4 class="font-semibold text-(--title) mb-1">
-                <!-- {{ request.title }} -->
-              </h4>
-              <div class="flex flex-wrap gap-3 text-sm text-(--text)">
-                <span
-                  ><span class="text-gray-500">Автор:</span>
-                  {{ request.author }}</span
-                >
-                <span
-                  ><span class="text-gray-500">ID лифта:</span>
-                  <span class="font-mono">{{ request.liftId }}</span></span
-                >
-                <span
-                  ><span class="text-gray-500">Дата:</span>
-                  {{ formatDate(request.createdAt) }}</span
-                >
-              </div>
-            </div>
-            <span
-              class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-              :class="getStatusColor(request.status)"
-            >
-              {{ getStatusLabel(request.status) }}
-            </span>
-          </div>
-        </div>
-        <div
-          v-if="filteredRequests.length === 0"
-          class="text-center text-(--placeholder) py-8"
+          <i class="pi pi-table"></i>
+        </button>
+        <button
+          type="button"
+          class="view-mode-btn"
+          :class="viewMode === 'list' ? 'active' : ''"
+          @click="changeViewMode('list')"
+          title="Список"
         >
-          Список заявок пуст
-        </div>
+          <i class="pi pi-list"></i>
+        </button>
       </div>
     </div>
 
-    <!-- Модальное окно просмотра/редактирования заявки -->
-    <ModalViewRequest
-      v-if="modalStore.modalState.viewRequest"
-      :requestForm="requestForm"
-      :current-request="currentRequest"
-      @reset-request-form="resetRequestForm"
-    />
+    <!-- Поиск и фильтры -->
+    <div class="flex gap-4 mb-4">
+      <div class="flex-auto">
+        <InputText
+          v-model="searchQuery"
+          placeholder="Поиск по id, автору или ID лифта..."
+          class="w-full"
+        />
+      </div>
+      <Dropdown
+        v-model="selectedStatus"
+        :options="statusOptions"
+        option-label="label"
+        option-value="value"
+        placeholder="Статус"
+        class="w-48"
+      />
+    </div>
 
-    <ModalEditRequest
-      v-if="modalStore.modalState.editRequest"
-      :requestForm="requestForm"
-      :current-request="currentRequest"
-      @reset-request-form="resetRequestForm"
-    />
+    <!-- Вид: Таблица -->
+    <div v-if="viewMode === 'table'" class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="text-left bg-(--bg) text-(--text)">
+            <th class="px-4 py-3 font-semibold rounded-tl-lg">№</th>
+            <th class="px-4 py-3 font-semibold">Дата создания</th>
 
-    <!-- Модальное окно создания новой заявки -->
-    <ModalNewRequest
-      v-if="modalStore.modalState.createRequest"
-      :requestForm="requestForm"
-      :elevatorList="elevatorList"
-    />
+            <th class="px-4 py-3 font-semibold">ID работника</th>
+            <th class="px-4 py-3 font-semibold">ID лифта</th>
+            <th class="px-4 py-3 font-semibold">Статус</th>
+
+            <th class="px-4 py-3 font-semibold rounded-tr-lg">Убрать</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="request in filteredRequests"
+            :key="request.id"
+            class="border-t border-(--border) hover:bg-(--bg) cursor-pointer"
+            @click="openViewModal(request)"
+          >
+            <td class="px-4 py-3 text-(--text)">
+              <span class="font-semibold">{{ request.id }}</span>
+            </td>
+            <td class="px-4 py-3 text-(--text) text-sm">
+              {{ formatDate(request.createdAt) }}
+            </td>
+
+            <td class="px-4 py-3 text-(--text)">
+              {{ request.authorId }}
+            </td>
+            <td class="px-4 py-3 text-(--text)">
+              <span>{{ request.liftId }}</span>
+            </td>
+
+            <td class="px-4 py-3">
+              <span
+                class="px-3 py-1 rounded-full text-xs font-medium"
+                :class="getStatusColor(request.status)"
+              >
+                {{ getStatusLabel(request.status) }}
+              </span>
+            </td>
+
+            <td class="px-4 py-3 text-(--text) text-sm">
+              <button
+                class="w-10 h-10 p-3 rounded-full hover:text-(--red) text-center"
+                @click.stop="handleDeleteRequest(request.id)"
+              >
+                <i class="pi pi-trash"></i>
+              </button>
+            </td>
+          </tr>
+          <tr v-if="filteredRequests.length === 0">
+            <td :colspan="6" class="px-4 py-8 text-center text-(--placeholder)">
+              Список заявок пуст
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Вид: Список -->
+    <div v-else class="flex flex-col gap-3">
+      <div
+        v-for="request in filteredRequests"
+        :key="request.id"
+        class="request-item bg-(--bg) rounded-lg p-4 hover:bg-gray-100 cursor-pointer transition-colors"
+        @click="openViewModal(request)"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-auto">
+            <h4 class="font-semibold text-(--title) mb-1">
+              <!-- {{ request.title }} -->
+            </h4>
+            <div class="flex flex-wrap gap-3 text-sm text-(--text)">
+              <span
+                ><span class="text-gray-500">Автор:</span>
+                {{ request.author }}</span
+              >
+              <span
+                ><span class="text-gray-500">ID лифта:</span>
+                <span class="font-mono">{{ request.liftId }}</span></span
+              >
+              <span
+                ><span class="text-gray-500">Дата:</span>
+                {{ formatDate(request.createdAt) }}</span
+              >
+            </div>
+          </div>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+            :class="getStatusColor(request.status)"
+          >
+            {{ getStatusLabel(request.status) }}
+          </span>
+        </div>
+      </div>
+      <div
+        v-if="filteredRequests.length === 0"
+        class="text-center text-(--placeholder) py-8"
+      >
+        Список заявок пуст
+      </div>
+    </div>
   </div>
+
+  <!-- Модальное окно просмотра/редактирования заявки -->
+  <ModalViewRequest
+    v-if="modalStore.modalState.viewRepairRequest"
+    :requestForm="requestForm"
+    :current-request="currentRequest"
+    @reset-request-form="resetRequestForm"
+  />
+
+  <ModalEditRequest
+    v-if="modalStore.modalState.editRepairRequest"
+    :requestForm="requestForm"
+    :current-request="currentRequest"
+    @reset-request-form="resetRequestForm"
+  />
+
+  <!-- Модальное окно создания новой заявки -->
+  <ModalNewRequest
+    v-if="modalStore.modalState.createRepairRequest"
+    :requestForm="requestForm"
+    :elevatorList="elevatorList"
+  />
 </template>
 
 <style scoped>

@@ -1,27 +1,36 @@
 <script setup lang="ts">
-import { Dialog, Button, Dropdown, InputText, Textarea } from "primevue";
-import type { RequestForm, PartOption } from "@/types/RequestTypes";
+import {
+  Dialog,
+  Button,
+  Dropdown,
+  InputText,
+  Textarea,
+  InputNumber,
+} from "primevue";
+import type { RepairRequestForm } from "@/types/RepairRequestTypes";
+// import type { PartOption } from "@/types/PartsRequestTypes";
 import type { Elevator } from "@/types/ElevatorTypes";
-import { emergencyProblems, partOptions } from "@/data/requestData";
-import { useRequestStore } from "@/stores/useRequestStore";
+import { partOptions } from "@/data/requestData";
+import { emergencyProblems } from "@/data/emergencyProblems";
+import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 import { useModalStore } from "@/stores/useModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 
-const requestStore = useRequestStore();
+const requestStore = useRepairRequestStore();
 const modalStore = useModalStore();
 const { userData } = storeToRefs(useUserStore());
 
 const { requestForm, elevatorList } = defineProps<{
-  requestForm: RequestForm;
+  requestForm: RepairRequestForm;
   elevatorList: Elevator[];
 }>();
 
-const selectedParts = ref<PartOption[]>([{ partName: "", quantity: "1" }]);
+const selectedParts = ref<PartOption[]>([{ partName: "", quantity: 1 }]);
 
 const addPartRow = () => {
-  selectedParts.value.push({ partName: "", quantity: "1" });
+  selectedParts.value.push({ partName: "", quantity: 1 });
 };
 
 const removePartRow = (index: number) => {
@@ -45,25 +54,17 @@ const resetRequestForm = () => {
   requestForm.comment = "";
 
   selectedParts.value.splice(0, selectedParts.value.length);
-  selectedParts.value.push({ partName: "", quantity: "1" });
+  selectedParts.value.push({ partName: "", quantity: 1 });
 
   selectedProblems.value.splice(0, selectedProblems.value.length);
   emergencyOtherProblem.value = "";
-};
-
-//Назначение автора
-const appointAuthor = () => {
-  if (userData.value) {
-    requestForm.authorId = userData.value.id;
-    requestForm.author = userData.value.username;
-  }
 };
 
 // Скрытие модального окна
 const onModalVisibilityChange = (value: boolean) => {
   if (!value) {
     resetRequestForm();
-    modalStore.closeModal("createRequest");
+    modalStore.closeModal("createRepairRequest");
     return;
   }
 };
@@ -71,7 +72,6 @@ const onModalVisibilityChange = (value: boolean) => {
 // Создание заявки
 const handleCreateRequest = async () => {
   if (requestForm.type === "emergency") {
-   
     // Заменяем "other" на текст из input
     const otherText = emergencyOtherProblem.value.toLowerCase().trim();
 
@@ -91,15 +91,13 @@ const handleCreateRequest = async () => {
   console.log("requestForm: ", requestForm);
   await requestStore.createRequest(requestForm);
   resetRequestForm();
-  modalStore.closeModal("createRequest");
+  modalStore.closeModal("createRepairRequest");
 };
-
-onMounted(appointAuthor);
 </script>
 
 <template>
   <Dialog
-    :visible="modalStore.modalState.createRequest"
+    :visible="modalStore.modalState.createRepairRequest"
     @update:visible="onModalVisibilityChange"
     header="Новая заявка"
     modal
@@ -187,12 +185,14 @@ onMounted(appointAuthor);
               show-clear
               filter
             />
-            <InputText
+            <InputNumber
               v-model="part.quantity"
               type="number"
-              min="1"
+              :min="1"
+              :max="1000"
               class="w-20"
               placeholder="Кол-во"
+              showButtons
             />
             <Button
               v-if="selectedParts.length > 1"
