@@ -63,6 +63,7 @@ const canEditRequest = (request: RepairRequest) => {
 
 const handleOpenModalEditRequest = () => {
   modalStore.openModal("editRepairRequest");
+  modalStore.closeModal("viewRepairRequest");
 };
 </script>
 

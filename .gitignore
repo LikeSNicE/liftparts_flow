@@ -25,6 +25,10 @@ dist-ssr
 
 # envoriments
 src/.env
+.env.local
+.env.*.local
+.env.local.*
+.env
 
 # Role-based components
 src/components/RoleGuard.vue
