@@ -33,3 +33,6 @@ src/.env
 # Role-based components
 src/components/RoleGuard.vue
 src/components/RoleBasedView.vue
+
+# Diagrams
+erDiagram.txt
