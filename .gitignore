@@ -36,3 +36,6 @@ src/components/RoleBasedView.vue
 
 # Diagrams
 erDiagram.txt
+
+*storybook.log
+storybook-static

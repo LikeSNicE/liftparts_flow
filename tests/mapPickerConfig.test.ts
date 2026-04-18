@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import {describe, expect, it} from "vitest";
 import { buildMapPickerUrl, MAP_PICKER_PATH } from "../src/config/mapPicker";
 
 describe("map picker config", () => {

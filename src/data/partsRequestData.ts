@@ -2,7 +2,7 @@ import type {
   PartsRequestUrgency,
 } from "@/types/PartsRequestTypes";
 import type { TableHeader } from "@/types/TableTypes";
-import type { StatusOption } from "@/data/statusOptionsData";
+import type { Option } from "@/types/OptionsTypes";
 
 export interface UrgencyOption {
   label: string;
@@ -11,7 +11,7 @@ export interface UrgencyOption {
 }
 
 // Статусы заявок на запчасти
-export const partsRequestStatusOptions: StatusOption[] = [
+export const partsRequeststatusOptionsData: Option[] = [
   { label: "Все статусы", value: "" },
   {
     label: "Ожидает обработки",

@@ -11,7 +11,7 @@ import { onMounted } from "vue";
 import { formatDate } from "@/utils/formatDate";
 import Table from "@/components/Table.vue";
 import { useFilter } from "@/composables/useFilter";
-import { statusOptions } from "@/data/statusOptionsData";
+import { statusOptionsData } from "@/data/statusOptionsData";
 import { partsRequestTableHeaders } from "@/data/partsRequestData";
 import { getStatusLabel } from "@/utils/getStatusLabel";
 import { getStatusColor } from "@/utils/getStatusColor";
@@ -81,9 +81,9 @@ onMounted(() => partsRequestStore.getPartsRequests());
     header-title="Список заявок по запчястам"
     :search-query="searchQuery"
     :selected-status="selectedStatus"
-    :status-options="statusOptions"
+    :status-options-data="statusOptionsData"
     :table-headers="partsRequestTableHeaders"
-    :filtered-requests="filteredRequests"
+    :data="filteredRequests"
     @update:searchQuery="searchQuery = $event"
     @update:selectedStatus="selectedStatus = $event"
   >

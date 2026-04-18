@@ -10,6 +10,13 @@ import { storeToRefs } from "pinia";
 import { onMounted } from "vue";
 import { useModalStore } from "@/stores/useModalStore";
 
+import Table from "@/components/Table.vue";
+import { warehouseTableHeaders } from "@/data/warehouseTableData";
+import { useFilter } from "@/composables/useFilter";
+import { getPartStatus } from "@/utils/getPartStatus";
+import { getPartColor } from "@/utils/getPartColor";
+import { warehouseStatusPart } from "@/data/warehouseTableData";
+
 const partsStore = usePartsStore();
 const { partsList } = storeToRefs(partsStore);
 
@@ -21,21 +28,27 @@ const isIssueModalVisible = ref(false);
 // Текущая выбранная запчасть
 const selectedPart = ref<Part | null>(null);
 
-// Поиск
-const searchQuery = ref("");
+const { searchQuery, selectedStatus } = useFilter();
 
 // Данные склада на основе partOptions
 const warehouseParts = ref(partsList);
 
 // Фильтрация по поиску
 const filteredParts = computed(() => {
-  if (!searchQuery.value.trim()) {
-    return warehouseParts.value;
+  let result = warehouseParts.value;
+
+  if (selectedStatus.value) {
+    result = result.filter(
+      (part) => part.status === selectedStatus.value,
+    );
   }
-  const query = searchQuery.value.toLowerCase();
-  return warehouseParts.value.filter((part) =>
-    part.name.toLowerCase().includes(query),
-  );
+
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter((part) => part.name.toLowerCase().includes(query));
+  }
+
+  return result;
 });
 
 // Открытие модальных окон
@@ -47,11 +60,6 @@ const openIncomeModal = (part: Part) => {
 const openWriteOffModal = (part: Part) => {
   selectedPart.value = part;
   isWriteOffModalVisible.value = true;
-};
-
-const openIssueModal = (part: Part) => {
-  selectedPart.value = part;
-  isIssueModalVisible.value = true;
 };
 
 // Обработчики операций
@@ -85,110 +93,45 @@ onMounted(() => partsStore.getParts());
 
 <template>
   <div class="warehouse-page flex flex-col gap-6">
-    <div class="warehouse-card bg-white rounded-lg p-6 shadow-sm">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-xl font-semibold text-(--title)">Склад запчастей</h2>
-      </div>
+    <Table
+      header-title="Склад запчастей"
+      :search-query="searchQuery"
+      :table-headers="warehouseTableHeaders"
+      :selected-status="selectedStatus"
+      :status-options-data="warehouseStatusPart"
+      :data="filteredParts"
+      @update:searchQuery="searchQuery = $event"
+      :show-view-mode="false"
+      @update:selectedStatus="selectedStatus = $event"
+    >
+      <template #cell-status="{ item }">
+        <span
+          class="px-2 py-1 rounded-full text-xs"
+          :class="getPartColor(item.status)"
+        >
+          {{ getPartStatus(item.status) }}
+        </span>
+      </template>
 
-      <!-- Поиск -->
-      <div class="flex gap-4 mb-4">
-        <div class="flex-auto">
-          <InputText
-            v-model="searchQuery"
-            placeholder="Поиск по названию запчасти..."
-            class="w-full"
+      <template #cell-actions="{ item }">
+        <div class="flex gap-2">
+          <Button
+            label="Приход"
+            size="small"
+            severity="success"
+            @click="openIncomeModal(item)"
+          />
+          <Button
+            label="Списание"
+            size="small"
+            severity="danger"
+            @click="openWriteOffModal(item)"
           />
         </div>
-      </div>
+      </template>
+    </Table>
 
-      <!-- Таблица -->
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="border-b border-(--border)">
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                ID
-              </th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                Название
-              </th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                Количество
-              </th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                Единица
-              </th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                Статус
-              </th>
-              <th class="text-left py-3 px-4 text-sm font-medium text-(--text)">
-                Действия
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="part in filteredParts"
-              :key="part.id"
-              class="border-b border-(--border) hover:bg-gray-50 transition-colors"
-            >
-              <td class="py-3 px-4 text-sm text-(--text)">{{ part.id }}</td>
-              <td class="py-3 px-4 text-sm text-(--text)">{{ part.name }}</td>
-              <td class="py-3 px-4 text-sm text-(--text)">
-                {{ part.quantity }}
-              </td>
-              <td class="py-3 px-4 text-sm text-(--text)">{{ part.unit }}</td>
-              <td class="py-3 px-4 text-sm">
-                <span v-if="part.quantity === 0">
-                  <span
-                    class="px-2 py-1 bg-gray-400 text-(--white) rounded-full text-xs"
-                  >
-                    Нет в наличии
-                  </span>
-                </span>
-                <span
-                  v-else-if="
-                    part.quantity > 0 && part.quantity <= part.minQuantity
-                  "
-                  class="px-2 py-1 rounded-full text-xs bg-red-100 text-red-700"
-                >
-                  Низкий остаток
-                </span>
-                <span
-                  v-else
-                  class="px-2 py-1 rounded-full text-xs bg-green-100 text-green-700"
-                >
-                  В наличии
-                </span>
-              </td>
-              <td class="py-3 px-4">
-                <div class="flex gap-2">
-                  <Button
-                    label="Приход"
-                    size="small"
-                    severity="success"
-                    @click="openIncomeModal(part)"
-                  />
-                  <Button
-                    label="Списание"
-                    size="small"
-                    severity="danger"
-                    @click="openWriteOffModal(part)"
-                  />
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div
-          v-if="filteredParts.length === 0"
-          class="text-center py-8 text-(--placeholder)"
-        >
-          Запчасти не найдены
-        </div>
-      </div>
-    </div>
+  
 
     <!-- Модальные окна -->
     <ModalWarehouseIncome v-if="selectedPart" :part="selectedPart" />

@@ -1,10 +1,6 @@
-export interface StatusOption {
-  label: string;
-  value: string;
-  color?: string;
-}
+import type { Option } from "@/types/OptionsTypes";
 
-export const statusOptions: StatusOption[] = [
+export const statusOptionsData: Option[] = [
   { label: "Все статусы", value: "" },
   {
     label: "В ожидании",

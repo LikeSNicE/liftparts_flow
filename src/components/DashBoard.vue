@@ -9,11 +9,11 @@ import type {
   RepairRequest,
   RepairRequestForm,
 } from "@/types/RepairRequestTypes";
-import ModalViewRequest from "@/components/repair/ModalViewRequest.vue";
-import ModalEditRequest from "@/components/repair/ModalEditRequest.vue";
+import ModalViewRepairRequest from "./repair/ModalViewRepairRequest.vue";
+import ModalEditRepairRequest from "./repair/ModalEditRepairRequest.vue";
 import { getStatusColor } from "@/utils/getStatusColor";
 import { getStatusLabel } from "@/utils/getStatusLabel";
-import type { StatusOption } from "@/data/statusOptionsData";
+
 
 const requestStore = useRepairRequestStore();
 const userStore = useUserStore();
@@ -23,7 +23,7 @@ const { requestList } = storeToRefs(requestStore);
 const { userData } = storeToRefs(userStore);
 
 onMounted(async () => {
-  await requestStore.getRequests();
+  await requestStore.getRepairRequests();
 });
 
 // Статистика по статусам
@@ -54,7 +54,7 @@ const recentRequests = computed(() => {
 
 // Получить отображаемое название статуса
 // const getStatusLabel = (status: RepairRequestStatus) => {
-//   return statusOptions.find((s) => s.value === status)?.label || status;
+//   return statusOptionsData.find((s) => s.value === status)?.label || status;
 // };
 
 // Текущая заявка для просмотра/редактирования
@@ -248,7 +248,7 @@ const handleDeleteRequest = async (requestId: number) => {
     </div>
 
     <!-- Модальное окно просмотра заявки -->
-    <ModalViewRequest
+    <ModalViewRepairRequest
       v-if="
         modalStore.modalState.viewRepairRequest && requestForm && currentRequest
       "
@@ -257,7 +257,7 @@ const handleDeleteRequest = async (requestId: number) => {
       @reset-request-form="resetRequestForm"
     />
 
-    <ModalEditRequest
+    <ModalEditRepairRequest
       v-if="
         modalStore.modalState.editRepairRequest && requestForm && currentRequest
       "

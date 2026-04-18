@@ -1,11 +1,5 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-// import type {
-//   Request,
-//   RequestForm,
-//   RepairRequestStatus,
-//   NewRequest,
-// } from "@/types/RepairRepairRepairRequestTypes";
 import type {
   RepairRequestForm,
   RepairRequest,
@@ -21,7 +15,7 @@ export const useRepairRequestStore = defineStore("repair-requests", () => {
   const requestList = ref<RepairRequest[]>([]);
 
   // Получить все заявки
-  const getRequests = async () => {
+  const getRepairRequests = async () => {
     try {
       const { data } = await api.get<RepairRequest[]>("/repair-requests");
 
@@ -54,7 +48,7 @@ export const useRepairRequestStore = defineStore("repair-requests", () => {
       city: request.city,
     };
 
-    const { data } = await elevatorMonitorApi.post("/requests", payload);
+    const { data } = await elevatorMonitorApi.post("/repair-requestse", payload);
     return data?.data?.request_id as string | undefined;
   };
 
@@ -128,7 +122,7 @@ export const useRepairRequestStore = defineStore("repair-requests", () => {
   // Удалить заявку
   const deleteRequest = async (id: number) => {
     try {
-      await api.delete(`/requests/${id}`);
+      await api.delete(`/repair-requests/${id}`);
       requestList.value = requestList.value.filter(
         (request) => request.id !== id,
       );
@@ -156,7 +150,7 @@ export const useRepairRequestStore = defineStore("repair-requests", () => {
 
   return {
     requestList,
-    getRequests,
+    getRepairRequests,
     createRequest,
     updateRequest,
     deleteRequest,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { Button } from "primevue";
 import { Dialog } from "primevue";
 import { InputText } from "primevue";
@@ -13,6 +13,20 @@ import type {
 
 import { useEmployeeStore } from "@/stores/useEmployeeStore";
 import { storeToRefs } from "pinia";
+import Table from "@/components/Table.vue";
+import { employeeTableHeaders } from "@/data/employeesTableData";
+
+import { statusEmployeeOptions } from "@/data/statusEmployeeData";
+import { roleEmployeeOptions } from "@/data/roleEmployeeData";
+
+import { getRoleLabel } from "@/utils/getRoleLabel";
+import { getRoleColor } from "@/utils/getRoleColor";
+import { getEmployeeStatus } from "@/utils/getEmployeeStatus";
+import { getEmployeeColor } from "@/utils/getEmployeeColor";
+
+import { useFilter } from "@/composables/useFilter";
+
+const { searchQuery, selectedStatus } = useFilter();
 
 const employeeStore = useEmployeeStore();
 const { employeeList } = storeToRefs(employeeStore);
@@ -21,22 +35,6 @@ const { employeeList } = storeToRefs(employeeStore);
 onMounted(async () => {
   await employeeStore.getEmployees();
 });
-
-// Статусы сотрудников с отображаемыми названиями
-const statusOptions = [
-  { label: "На работе", value: "at_work" },
-  { label: "Удалённо", value: "remote" },
-  { label: "Перерыв", value: "break" },
-  { label: "Отпуск", value: "vacation" },
-  { label: "Неактивен", value: "inactive" },
-];
-
-// Роли с отображаемыми названиями
-const roleOptions = [
-  { label: "Механик", value: "mechanic" },
-  { label: "Администратор", value: "admin" },
-  { label: "Склад", value: "warehouse_operator" },
-];
 
 // === Модальное окно добавления/редактирования ===
 const isEditModalVisible = ref(false);
@@ -98,6 +96,31 @@ const handleUpdateEmployee = async () => {
 const isDeleteModalVisible = ref(false);
 const deleteConfirmText = ref("");
 
+const filteredUser = computed(() => {
+  let result = employeeList.value;
+
+  if (selectedStatus.value) {
+    result = result.filter(
+      (employee) => employee.status === selectedStatus.value,
+    );
+  }
+
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
+
+    result = result.filter((employee) => {
+      return (
+        employee.id.toString().toLowerCase().includes(query) ||
+        employee.username.toLowerCase().includes(query) ||
+        employee.lastname.toLowerCase().includes(query) ||
+        employee.middlename?.toLowerCase().includes(query)
+      );
+    });
+  }
+
+  return result;
+});
+
 // Открыть модальное окно удаления
 const openDeleteModal = () => {
   deleteConfirmText.value = "";
@@ -121,22 +144,54 @@ const handleEmployeeDelete = () => {
     closeEditModal();
   }
 };
-
-// Получить отображаемое название статуса
-const getStatusLabel = (status: EmployeeStatus) => {
-  return statusOptions.find((s) => s.value === status)?.label || status;
-};
-
-// Получить отображаемое название роли
-const getRoleLabel = (role: UserRole) => {
-  return roleOptions.find((r) => r.value === role)?.label || role;
-};
 </script>
 
 <template>
-  <div class="employees-page">
-    <!-- Таблица сотрудников -->
-    <div class="employees-card bg-white rounded-lg p-6">
+  <div>
+    <Table
+      header-title="Cписок сотрудников"
+      show-filters
+      :show-view-mode="false"
+      :table-headers="employeeTableHeaders"
+      :data="filteredUser"
+      :search-query="searchQuery"
+      :selected-status="selectedStatus"
+      :status-options-data="statusEmployeeOptions"
+      @update:searchQuery="searchQuery = $event"
+      @update:selectedStatus="selectedStatus = $event"
+    >
+      <template #cell-fullname="{ item }">
+        {{ item.lastname }} {{ item.username }} {{ item.middlename }}
+      </template>
+
+      <template #cell-role="{ value, item }">
+        <span
+          class="px-2 py-1 rounded-full text-xs font-medium"
+          :class="[getRoleColor(item.userrole)]"
+        >
+          {{ getRoleLabel(item.userrole) }}
+        </span>
+      </template>
+
+      <template #cell-status="{ value }">
+        <span
+          class="px-2 py-1 rounded-full text-xs font-medium"
+          :class="getEmployeeColor(value)"
+          >{{ getEmployeeStatus(value) }}</span
+        >
+      </template>
+
+      <template #cell-actions="{ item }">
+        <Button
+          label="Просмотр"
+          severity="success"
+          size="small"
+          @click.stop="openEditModal(item)"
+        />
+      </template>
+    </Table>
+
+    <!-- <div class="employees-card bg-white rounded-lg p-6">
       <h2 class="text-xl font-semibold text-(--title) mb-4">
         Список сотрудников
       </h2>
@@ -181,25 +236,18 @@ const getRoleLabel = (role: UserRole) => {
               <td class="px-4 py-3">
                 <span
                   class="px-2 py-1 rounded text-xs font-medium"
-                  :class="{
-                    'status-at-work': employee.status === 'at_work',
-                    'status-remote': employee.status === 'remote',
-                    'status-break': employee.status === 'break',
-                    'status-vacation': employee.status === 'vacation',
-                    'status-inactive': employee.status === 'inactive',
-                  }"
+                  :class="getEmployeeColor(employee.status)"
                 >
-                  {{ getStatusLabel(employee.status) }}
+                  {{ getEmployeeStatus(employee.status) }}
                 </span>
               </td>
               <td class="px-4 py-3">
-                <a
-                  href="#"
-                  class="edit-link"
-                  @click.prevent="openEditModal(employee)"
-                >
-                  Редактировать
-                </a>
+                <Button
+                  label="Просмотр"
+                  severity="success"
+                  size="small"
+                  @click.stop="openEditModal(employee)"
+                />
               </td>
             </tr>
             <tr v-if="employeeList.length === 0">
@@ -213,7 +261,7 @@ const getRoleLabel = (role: UserRole) => {
           </tbody>
         </table>
       </div>
-    </div>
+    </div> -->
 
     <!-- Модальное окно добавления/редактирования (ТОЛЬКО ПО ЦЕНТРУ) -->
     <Dialog
@@ -277,7 +325,7 @@ const getRoleLabel = (role: UserRole) => {
           <Dropdown
             id="role"
             v-model="employeeForm.userrole"
-            :options="roleOptions"
+            :options="roleEmployeeOptions"
             option-label="label"
             option-value="value"
             class="flex-auto border"
@@ -291,7 +339,7 @@ const getRoleLabel = (role: UserRole) => {
           <Dropdown
             id="status"
             v-model="employeeForm.status"
-            :options="statusOptions"
+            :options="statusEmployeeOptions"
             option-label="label"
             option-value="value"
             class="flex-auto"
@@ -437,32 +485,32 @@ const getRoleLabel = (role: UserRole) => {
 }
 
 /* Статус "На работе" - светло-голубой #D8EAFE */
-.status-at-work {
+/* .status-at-work {
   background-color: var(--blue-bg);
   color: var(--blue);
-}
+} */
 
 /* Статус "Удалённо" - зелёный #16A34A */
-.status-remote {
+/* .status-remote {
   background-color: var(--green);
   color: white;
-}
+} */
 
 /* Статус "Перерыв" - оранжевый #D97706 */
-.status-break {
+/* .status-break {
   background-color: var(--orange);
   color: white;
-}
+} */
 
 /* Статус "Отпуск" - фиолетовый #7E22CE */
-.status-vacation {
+/* .status-vacation {
   background-color: var(--purple-bg);
   color: var(--purple);
-}
+} */
 
 /* Статус "Неактивен" - красный #DC2626 */
-.status-inactive {
+/* .status-inactive {
   background-color: var(--red);
   color: white;
-}
+} */
 </style>

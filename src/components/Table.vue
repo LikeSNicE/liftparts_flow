@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StatusOption } from "@/data/statusOptionsData";
+import type { Option } from "@/types/OptionsTypes";
 import type { TableHeader } from "@/types/TableTypes";
 import { Dropdown, InputText } from "primevue";
 import { useViewModeTable } from "@/composables/useViewModeTable";
@@ -14,20 +14,22 @@ interface TableProps {
   headerTitle?: string;
   searchQuery?: string;
   selectedStatus?: string;
-  statusOptions?: StatusOption[];
+  statusOptionsData?: Option[];
   tableHeaders?: TableHeader[];
-  filteredRequests?: any[];
+  data?: any[];
   showFilters?: boolean;
+  showViewMode?: boolean;
 }
 
 const {
   headerTitle,
   searchQuery,
   selectedStatus,
-  statusOptions,
-  filteredRequests,
+  statusOptionsData,
+  data,
   tableHeaders,
   showFilters = true,
+  showViewMode = true,
 } = defineProps<TableProps>();
 
 const emit = defineEmits<{
@@ -46,7 +48,7 @@ const { viewMode, changeViewMode } = useViewModeTable();
           {{ headerTitle }}
         </h5>
 
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" v-if="showViewMode">
           <button
             type="button"
             class="view-mode-btn"
@@ -75,14 +77,14 @@ const { viewMode, changeViewMode } = useViewModeTable();
           <input-text
             :model-value="searchQuery"
             @update:model-value="emit('update:searchQuery', $event ?? '')"
-            placeholder="Поиск по id, ФИО автора"
+            placeholder="Поиск..."
             class="w-full"
           ></input-text>
         </div>
         <dropdown
           :model-value="selectedStatus"
           @update:model-value="emit('update:selectedStatus', $event)"
-          :options="statusOptions"
+          :options="statusOptionsData"
           option-label="label"
           option-value="value"
           placeholder="Статус"
@@ -111,7 +113,7 @@ const { viewMode, changeViewMode } = useViewModeTable();
           <tbody>
             <tr
               class="border-t border-(--border) hover:bg-(--bg) cursor-pointer"
-              v-for="request in filteredRequests"
+              v-for="request in data"
               :key="request.id"
             >
               <td
@@ -123,7 +125,7 @@ const { viewMode, changeViewMode } = useViewModeTable();
                   :name="`cell-${header.value}`"
                   :item="request"
                   :value="request[header.value]"
-                  :label="header.value"
+                  :label="header.label"
                 >
                   {{ request[header.value] }}
                 </slot>
@@ -133,7 +135,7 @@ const { viewMode, changeViewMode } = useViewModeTable();
         </table>
 
         <div
-          v-if="filteredRequests?.length === 0"
+          v-if="data?.length === 0"
           class="text-center py-8 text-(--placeholder)"
         >
           <slot name="empty"> Данные не найдены </slot>
@@ -141,10 +143,10 @@ const { viewMode, changeViewMode } = useViewModeTable();
       </div>
     </slot>
 
-    <!-- <slot name="list">
+    <slot name="list">
       <div v-if="viewMode === 'list'" class="flex flex-col gap-4">
         <div
-          v-for="request in filteredRequests"
+          v-for="request in data"
           :key="request.id"
           class="bg-(--bg) rounded-lg p-4 hover:bg-gray-100 cursor-pointer transition-colors flex flex-col gap-3"
         >
@@ -184,7 +186,7 @@ const { viewMode, changeViewMode } = useViewModeTable();
           </div>
         </div>
       </div>
-    </slot> -->
+    </slot>
   </div>
 </template>
 

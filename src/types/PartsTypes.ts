@@ -4,6 +4,7 @@ export interface Part {
   quantity: number;
   minQuantity: number;
   unit: string;
+  status: string;
 }
 
 export interface PartsRequestItem {

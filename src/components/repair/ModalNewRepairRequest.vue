@@ -125,6 +125,7 @@ const handleCreateRequest = async () => {
     resetRequestForm();
     closeMapPicker();
     modalStore.closeModal("createRepairRequest");
+    console.log("Заявка успешно отправлена", requestForm);
   } catch (error) {
     addressError.value = "Не удалось отправить заявку. Повторите попытку";
     console.log("Ошибка отправки заявки:", error);

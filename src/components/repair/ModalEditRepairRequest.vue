@@ -3,22 +3,14 @@ import type {
   RepairRequest,
   RepairRequestForm,
 } from "@/types/RepairRequestTypes";
-import {
-  Dialog,
-  Dropdown,
-  InputText,
-  Button,
-  Textarea,
-  InputNumber,
-} from "primevue";
+import { Dialog, Dropdown, InputNumber, Button, Textarea } from "primevue";
 import { computed } from "vue";
 import { partOptions } from "@/data/requestData";
 import { emergencyProblems } from "@/data/emergencyProblems";
-import { statusOptions } from "@/data/statusOptionsData";
+import { statusOptionsData } from "@/data/statusOptionsData";
 import { useRole } from "@/composables/useRole";
-import { useUserStore } from "@/stores/useUserStore";
-import { storeToRefs } from "pinia";
 import { useModalStore } from "@/stores/useModalStore";
+import { useRepairRequestStore } from "@/stores/useRepairRequestStore";
 
 const { requestForm, currentRequest } = defineProps<{
   requestForm: RepairRequestForm;
@@ -26,20 +18,21 @@ const { requestForm, currentRequest } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: "resetRequestForm"): void;
+  (e: "reset-request-form"): void;
 }>();
 
 const modalStore = useModalStore();
+const requestStore = useRepairRequestStore();
 
-const isModalVisible = computed(() => modalStore.modalState.viewRepairRequest);
+const isModalVisible = computed(() => modalStore.modalState.editRepairRequest);
 
 const handleCloseModal = () => {
   if (currentRequest) {
-    emit("resetRequestForm");
+    emit("reset-request-form");
+    modalStore.closeModal("editRepairRequest");
     modalStore.closeModal("viewRepairRequest");
   }
 };
-const { userData } = storeToRefs(useUserStore());
 
 const addViewPartRow = () => {
   requestForm.parts.push({ partName: "", quantity: 1 });
@@ -53,18 +46,21 @@ const removeViewPartRow = (index: number) => {
 
 const { can } = useRole();
 
-const canEditRequest = (request: RepairRequest) => {
-  if (!request) return false;
-  return (
-    can(["admin", "mechanic", "warehouse_operator"]) ||
-    request.authorId === userData.value?.id
-  );
+const handleUpdateRequest = async () => {
+  if (!currentRequest) {
+    console.error("currentRequest is null!");
+    return;
+  }
+
+  try {
+    await requestStore.updateRequest(currentRequest.id, requestForm);
+    handleCloseModal();
+  } catch (error) {
+    console.error("Ошибка при обновлении заявки:", error);
+  }
 };
 
-const handleOpenModalEditRequest = () => {
-  modalStore.openModal("editRepairRequest");
-  modalStore.closeModal("viewRepairRequest");
-};
+console.log("requestForm: ", requestForm);
 </script>
 
 <template>
@@ -73,7 +69,7 @@ const handleOpenModalEditRequest = () => {
     @update:visible="handleCloseModal"
     modal
     :draggable="false"
-    header="Просмотр заявки"
+    header="Редактирование заявки"
     position="center"
     :closable="true"
     :style="{ width: '35rem' }"
@@ -90,7 +86,7 @@ const handleOpenModalEditRequest = () => {
               ? 'planned-active'
               : 'planned-inactive'
           "
-          disabled
+          @click="requestForm.type = 'planned'"
         >
           Плановая
         </button>
@@ -102,7 +98,7 @@ const handleOpenModalEditRequest = () => {
               ? 'emergency-active'
               : 'emergency-inactive'
           "
-          disabled
+          @click="requestForm.type = 'emergency'"
         >
           Аварийная
         </button>
@@ -126,19 +122,20 @@ const handleOpenModalEditRequest = () => {
               option-value="value"
               class="flex-auto"
               placeholder="Деталь"
-              disabled
               show-clear
               filter
             />
-            <InputNumber
-              v-model="part.quantity"
-              type="number"
-              :min="1"
-              :max="1000"
-              class="w-20"
-              disabled
-              placeholder="Кол-во"
-            />
+
+            <div class="w-20">
+              <InputNumber
+                v-model="part.quantity"
+                type="number"
+                :min="1"
+                :max="1000"
+                class="w-full"
+                placeholder="Кол-во"
+              />
+            </div>
             <Button
               v-if="requestForm.parts.length > 1"
               type="button"
@@ -155,14 +152,12 @@ const handleOpenModalEditRequest = () => {
           icon="pi pi-plus"
           class="p-button-text p-button-sm"
           @click="addViewPartRow"
-          disabled
         />
       </div>
 
       <div v-else class="flex flex-col gap-2">
         <label class="text-sm font-semibold text-(--title)">
-          ПРОБЛЕМА
-          <span class="text-(--red)">*</span>
+          ПРОБЛЕМА <span class="text-(--red)">*</span>
         </label>
         <div
           class="border border-(--border) rounded-lg p-3 max-h-64 overflow-y-auto"
@@ -178,7 +173,6 @@ const handleOpenModalEditRequest = () => {
               :value="problem.value"
               v-model="requestForm.selectedProblems"
               class="w-4 h-4 text-(--red) rounded focus:ring-(--red) mt-0.5 shrink-0"
-              disabled
             />
             <label
               :for="'view-problem-' + problem.value"
@@ -202,7 +196,6 @@ const handleOpenModalEditRequest = () => {
           v-model="requestForm.emergencyOtherProblem"
           placeholder="Опишите проблему..."
           class="w-full"
-          disabled
         />
       </div>
 
@@ -218,7 +211,6 @@ const handleOpenModalEditRequest = () => {
           v-model="requestForm.objectAddress"
           class="w-full"
           placeholder="Например: ул. Ленина 42, лифт №7"
-          disabled
         />
       </div>
 
@@ -231,7 +223,7 @@ const handleOpenModalEditRequest = () => {
           v-model="requestForm.comment"
           class="w-full"
           rows="3"
-          disabled
+          placeholder="Опишите проблему подробно..."
         />
         <span class="text-xs text-(--placeholder)">
           Необязательно, но помогает ускорить обработку заявки
@@ -245,28 +237,26 @@ const handleOpenModalEditRequest = () => {
         <Dropdown
           id="viewStatus"
           v-model="requestForm.status"
-          :options="statusOptions.slice(1)"
+          :options="statusOptionsData.slice(1)"
           option-label="label"
           option-value="value"
           class="w-full"
           placeholder="Выберите статус"
-          disabled
         />
       </div>
 
       <div class="flex justify-end gap-2 mt-6">
         <Button
-          v-if="canEditRequest(currentRequest!)"
           type="button"
-          label="Редактировать"
-          class="edit-btn"
-          @click="handleOpenModalEditRequest"
+          label="Отмена"
+          severity="secondary"
+          @click="handleCloseModal"
         />
         <Button
           type="button"
-          label="Закрыть"
-          severity="secondary"
-          @click="handleCloseModal"
+          label="Сохранить"
+          class="save-btn"
+          @click.stop="handleUpdateRequest"
         />
       </div>
     </div>
@@ -275,10 +265,6 @@ const handleOpenModalEditRequest = () => {
 
 <style scoped>
 /* Отключаем cursor для кнопок внутри переключателя */
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
 
 /* Кнопка "Плановая" - активная (синяя) */
 .planned-active {

@@ -12,7 +12,7 @@ import type { PartsRequest } from "@/types/PartsRequestTypes";
 import { useModalStore } from "@/stores/useModalStore";
 import { usePartsRequestStore } from "@/stores/usePartsRequestStore";
 import { useRole } from "@/composables/useRole";
-import { statusOptions } from "@/data/statusOptionsData";
+import { statusOptionsData } from "@/data/statusOptionsData";
 import { getStatusLabel } from "@/utils/getStatusLabel";
 import { getStatusColor } from "@/utils/getStatusColor";
 import { urgencyOptions } from "@/data/partsRequestData";
@@ -42,7 +42,7 @@ const partsStore = usePartsStore();
 const { partsList } = storeToRefs(partsStore);
 
 // Опции статуса для admin и warehouse_operator
-const partsStatusOptions = statusOptions.filter(
+const partsstatusOptionsData = statusOptionsData.filter(
   (option) => option.value !== "",
 );
 
@@ -293,7 +293,7 @@ onMounted(() => partsStore.getParts());
         </label>
         <Dropdown
           v-model="form.status"
-          :options="partsStatusOptions"
+          :options="partsstatusOptionsData"
           option-label="label"
           option-value="value"
           class="w-full"

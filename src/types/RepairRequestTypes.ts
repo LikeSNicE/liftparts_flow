@@ -16,6 +16,9 @@ export type RepairRequestStatus =
   | "completed"
   | "rejected";
 
+// Типы сихнонизации статуса с монитором
+export type MonitorSyncStatus = "pending" | "synced" | "failed";
+
 // Интерфейс заявки
 export interface RepairRequest {
   id: number;
@@ -32,7 +35,7 @@ export interface RepairRequest {
   latitude?: number | null;
   longitude?: number | null;
   monitorRequestId?: string;
-  monitorSyncStatus?: "pending" | "synced" | "failed";
+  monitorSyncStatus?: MonitorSyncStatus;
   comment?: string;
   createdAt: string;
   updatedAt?: string;

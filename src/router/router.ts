@@ -101,6 +101,12 @@ const routes = [
               title: "Интерактивная карта",
             },
           },
+          {
+            path: "/:pathMatch(.*)*",
+            name: "NotFound",
+            component: () => import("@/pages/NotFoundPage.vue"),
+            meta: { title: "Страница не найдена" },
+          },
         ],
       },
     ],
@@ -150,15 +156,15 @@ router.beforeEach((to, _from, next) => {
     const userRole = userStore.userData?.userrole;
     const allowedRoles = to.meta.roles as UserRole[];
 
-    console.log('🔍 Route Guard Debug:', {
+    console.log("🔍 Route Guard Debug:", {
       path: to.path,
       userRole,
       allowedRoles,
-      hasAccess: userRole && allowedRoles.includes(userRole)
+      hasAccess: userRole && allowedRoles.includes(userRole),
     });
 
     if (!userRole || !allowedRoles.includes(userRole)) {
-      console.log('❌ Access denied, redirecting to home');
+      console.log("❌ Access denied, redirecting to home");
       next({ path: "/" }); // Перенаправляем на главную если нет доступа
       return;
     }

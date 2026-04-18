@@ -1,6 +1,6 @@
-import type { UrgencyOption } from "./partsRequestData";
+import type { Option } from "@/types/OptionsTypes";
 
-export const urgencyOptions: UrgencyOption[] = [
+export const urgencyOptions: Option[] = [
   {
     label: "Низкая",
     value: "low",
