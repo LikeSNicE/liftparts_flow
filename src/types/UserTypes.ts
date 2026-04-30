@@ -4,7 +4,7 @@ export interface UserI {
   lastname: string;
   email: string;
   userrole: UserRole;
-  password: string;
+  password?: string;
   middlename?: string;
   status: EmployeeStatus;
 }
@@ -12,8 +12,9 @@ export interface UserI {
 // Основная роль - mechanic, остальные (admin, warehouse_operator) добавляются через БД
 export type UserRole = "mechanic" | "admin" | "warehouse_operator";
 
-export type User = Omit<UserI, "password">;
-export type userRegisterPayload = Omit<UserI, "id">;
+// export type User = Omit<UserI, "password">;
+
+export type userRegisterPayload = Omit<UserI, "id" | "lastLogin">;
 
 // Статусы сотрудников
 export type EmployeeStatus =
@@ -23,28 +24,10 @@ export type EmployeeStatus =
   | "vacation"
   | "inactive";
 
-export interface Employee extends User {
+export interface Employee extends UserI {
   phone?: string;
   avatar?: string;
-  createdAt?: string;
-  lastLogin?: string;
 }
 
-export type EmployeeForm = Omit<User, "id">;
+export type EmployeeForm = Omit<Employee, "id" >;
 
-// Расширенные данные профиля
-
-// ? Настройки уведомлений
-export interface NotificationSettings {
-  emailNotifications: boolean;
-  pushNotifications: boolean;
-  newRequests: boolean;
-  orderStatus: boolean;
-}
-
-// ? 2FA настройки
-export interface TwoFASettings {
-  enabled: boolean;
-  secret?: string;
-  qrCode?: string;
-}

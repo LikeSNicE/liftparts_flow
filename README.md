@@ -1,5 +1,186 @@
-# Vue 3 + TypeScript + Vite
+# LiftPartsFlow
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Система управления заявками на ремонт и запчасти для лифтового оборудования.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Описание проекта
+
+LiftPartsFlow — это веб-приложение для управления процессами обслуживания лифтов, включающее:
+
+- Управление заявками на ремонт лифтов
+- Управление заявками на запчасти
+- Складской учет запчастей
+- Интерактивную карту объектов
+- Систему ролей и прав доступа
+- Панели управления для разных типов пользователей
+
+## Технологический стек
+
+- **Frontend Framework**: Vue 3 (Composition API + `<script setup>`)
+- **Language**: TypeScript
+- **Build Tool**: Vite
+- **UI Framework**: PrimeVue 4.5
+- **Styling**: Tailwind CSS 4.2
+- **State Management**: Pinia
+- **Routing**: Vue Router
+- **HTTP Client**: Axios
+- **Testing**: Vitest + Playwright
+- **Component Development**: Storybook
+
+## Роли пользователей
+
+Система поддерживает следующие роли:
+
+- **Admin** — полный доступ ко всем функциям системы
+- **Mechanic** — создание заявок на ремонт и запчасти
+- **Manager** — управление заявками и персоналом
+- **Warehouse Operator** — управление складом и выдача запчастей
+
+## Основные функции
+
+### Заявки на ремонт
+- Создание плановых и аварийных заявок
+- Привязка к конкретному лифту
+- Указание необходимых запчастей
+- Отслеживание статусов: pending, in_progress, approved, completed, rejected
+
+### Заявки на запчасти
+- Создание заявок на получение запчастей
+- Указание срочности (low, medium, high)
+- Привязка к заявкам на ремонт
+- Согласование и выдача запчастей
+
+### Управление складом
+- Учет запчастей
+- Контроль минимальных остатков
+- История выдачи
+
+### Интерактивная карта
+- Визуализация объектов на карте
+- Геолокация лифтов
+
+## Установка и запуск
+
+### Требования
+
+- Node.js 18+
+- npm или yarn
+
+### Установка зависимостей
+
+```bash
+npm install
+```
+
+### Запуск в режиме разработки
+
+```bash
+npm run dev
+```
+
+Приложение будет доступно по адресу `http://localhost:5173`
+
+### Сборка для продакшена
+
+```bash
+npm run build
+```
+
+### Предварительный просмотр продакшен-сборки
+
+```bash
+npm run preview
+```
+
+## Тестирование
+
+### Запуск unit-тестов
+
+```bash
+npm run test:unit
+```
+
+## Storybook
+
+### Запуск Storybook
+
+```bash
+npm run storybook
+```
+
+Storybook будет доступен по адресу `http://localhost:6006`
+
+### Сборка Storybook
+
+```bash
+npm run build-storybook
+```
+
+## Структура проекта
+
+```
+liftPartsFlow/
+├── src/
+│   ├── assets/          # Статические ресурсы
+│   ├── components/      # Vue компоненты
+│   ├── composables/     # Композиционные функции
+│   ├── config/          # Конфигурационные файлы
+│   ├── constants/       # Константы приложения
+│   ├── data/            # Данные и моки
+│   ├── Layouts/         # Layouts компоненты
+│   ├── pages/           # Страницы приложения
+│   ├── router/          # Настройка роутинга
+│   ├── service/         # API сервисы
+│   ├── stores/          # Pinia stores
+│   ├── stories/         # Storybook stories
+│   ├── types/           # TypeScript типы
+│   ├── utils/           # Утилиты
+│   ├── App.vue          # Корневой компонент
+│   └── main.ts          # Точка входа
+├── public/              # Публичные файлы
+├── tests/               # Тесты
+├── .storybook/          # Конфигурация Storybook
+└── erDiagram.txt        # ER-диаграмма базы данных
+```
+
+## База данных
+
+Схема базы данных включает следующие основные таблицы:
+
+- `users` — пользователи системы
+- `elevators` — лифты
+- `repair_requests` — заявки на ремонт
+- `parts_requests` — заявки на запчасти
+- `parts` — запчасти на складе
+
+Подробная ER-диаграмма доступна в файле `erDiagram.txt`.
+
+## Маршруты приложения
+
+- `/` — Главная страница (Dashboard)
+- `/admin` — Панель администратора
+- `/mechanic` — Панель механика
+- `/manager` — Панель менеджера
+- `/repair-requests` — Заявки на ремонт
+- `/parts-requests` — Заявки на запчасти
+- `/warehouse` — Склад
+- `/users` — Управление сотрудниками
+- `/interactive-map` — Интерактивная карта
+- `/settings` — Настройки
+- `/auth/login` — Вход в систему
+- `/auth/register` — Регистрация
+
+## Разработка
+
+### Рекомендуемая IDE
+
+- Visual Studio Code
+- Volar (расширение для Vue 3)
+- TypeScript Vue Plugin
+
+### Code Style
+
+Проект использует TypeScript в строгом режиме. Следуйте рекомендациям Vue 3 и TypeScript.
+
+## Лицензия
+
+Частный проект

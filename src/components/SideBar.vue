@@ -53,7 +53,7 @@ const handleLogout = () => {
   <aside class="sidebar flex flex-col h-screen bg-white sticky top-0">
     <!-- Header -->
     <div
-      class="flex items-center gap-2 py-2 px-4 shrink-0 border-b border-r border-(--border)"
+      class="flex items-center gap-2 px-4 shrink-0 border-b border-r border-(--border) h-16"
     >
       <LogoIcon />
       <h4 class="font-bold text-2xl text-(--title)">LiftPartsFlow</h4>
@@ -192,7 +192,8 @@ const handleLogout = () => {
           class="flex items-center gap-3 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors p-2 cursor-pointer"
         >
           <div>
-            <i class="pi pi-user" style="font-size: 1.5rem"></i>
+            <img v-if="userData?.avatar" :src="userData.avatar" class="w-10 h-10 aspect-square rounded-full object-cover"/>
+            <i v-else class="pi pi-user" style="font-size: 1.5rem"></i>
           </div>
           <div class="flex flex-col flex-1">
             <span class="font-bold text-sm text-(--title)">{{

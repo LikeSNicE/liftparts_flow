@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-
 import { Button } from "primevue";
 
 import type {
@@ -20,21 +19,25 @@ import ModalEditRepairRequest from "@/components/repair/ModalEditRepairRequest.v
 
 import { useModalStore } from "@/stores/useModalStore";
 
-import { getStatusColor } from "@/utils/getStatusColor";
-import { getStatusLabel } from "@/utils/getStatusLabel";
+import { getStatusColor, getStatusLabel } from "@/utils/entityHelpers";
 import Table from "@/components/Table.vue";
+import List from "@/components/List.vue";
+import Card from "@/components/Card.vue";
+import ViewMode from "@/components/ViewMode.vue";
+import SectionFilters from "@/components/SectionFilters.vue";
 import { useFilter } from "@/composables/useFilter";
+import { useViewMode } from "@/composables/useViewMode";
 import { repairRequestTableHeaders } from "@/data/repairRequestData";
 
 const { searchQuery, selectedStatus } = useFilter();
-
-// type ViewMode = "table" | "list";
 
 const requestStore = useRepairRequestStore();
 const userStore = useUserStore();
 const elevatorStore = useElevatorStore();
 const { can } = useRole();
 const modalStore = useModalStore();
+
+const { viewMode } = useViewMode();
 
 const { requestList } = storeToRefs(requestStore);
 const { userData } = storeToRefs(userStore);
@@ -149,46 +152,111 @@ const handleDeleteRequest = async (requestId: number) => {
 </script>
 
 <template>
-  <Table
-    header-title="Список заявок по ремонту"
-    :search-query="searchQuery"
-    :selected-status="selectedStatus"
-    :status-options-data="statusOptionsData"
-    :table-headers="repairRequestTableHeaders"
-    :data="filteredRequests"
-    @update:searchQuery="searchQuery = $event"
-    @update:selectedStatus="selectedStatus = $event"
-  >
-    <template #cell-createdAt="{ item }">
-      {{ formatDate(item.createdAt) }}
-    </template>
+  <Card>
+    <div class="mb-4 flex items-center justify-between">
+      <h5 class="font-semibold text-(--title)">Список заявок по ремонту</h5>
+      <ViewMode />
+    </div>
 
-    <template #cell-status="{ item }">
-      <span
-        class="px-3 py-1 rounded-full text-xs font-medium"
-        :class="getStatusColor(item.status)"
-      >
-        {{ getStatusLabel(item.status) }}
-      </span>
-    </template>
+    <SectionFilters
+      @update:searchQuery="searchQuery = $event"
+      @update:selectedStatus="selectedStatus = $event"
+      :search-query="searchQuery"
+      :selected-status="selectedStatus"
+      :status-options-data="statusOptionsData"
+    />
 
-    <template #cell-actions="{ item }">
-      <div>
-        <Button
-          label="Просмотр"
-          size="small"
-          @click.stop="openViewModal(item)"
-        />
-        <Button
-          label="Удалить"
-          size="small"
-          severity="danger"
-          class="ml-2"
-          @click.stop="handleDeleteRequest(item.id)"
-        />
-      </div>
-    </template>
-  </Table>
+    <Table
+      v-if="viewMode === 'table'"
+      :table-headers="repairRequestTableHeaders"
+      :data="filteredRequests"
+    >
+      <template #cell-createdAt="{ item }">
+        {{ formatDate(item.createdAt) }}
+      </template>
+
+      <template #cell-status="{ item }">
+        <span
+          class="px-3 py-1 rounded-full text-xs font-medium"
+          :class="getStatusColor(item.status)"
+        >
+          {{ getStatusLabel(item.status) }}
+        </span>
+      </template>
+
+      <template #cell-actions="{ item }">
+        <div class="flex gap-2">
+          <Button
+            label="Просмотр"
+            size="small"
+            @click.stop="openViewModal(item)"
+          />
+          <Button
+            label="Удалить"
+            size="small"
+            severity="danger"
+            @click.stop="handleDeleteRequest(item.id)"
+          />
+        </div>
+      </template>
+
+      <template #empty>
+        <div class="text-center py-12">
+          <i class="pi pi-inbox text-6xl text-gray-300"></i>
+          <p class="mt-4 text-gray-600">Заявок пока нет</p>
+        </div>
+      </template>
+    </Table>
+
+    <List v-if="viewMode === 'list'" :data="filteredRequests">
+      <template #list-content="{ item }">
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-wrap gap-3 text-sm text-(--text)">
+            <span>
+              <span class="text-gray-500">Автор:</span>
+              {{ item.author }}
+            </span>
+            <span>
+              <span class="text-gray-500">ID лифта:</span>
+              <span class="font-mono">{{ item.liftId }}</span>
+            </span>
+            <span>
+              <span class="text-gray-500">Дата:</span>
+              {{ formatDate(item.createdAt) }}
+            </span>
+          </div>
+
+          <div class="flex gap-2">
+            <span
+              class="rounded-full text-xs font-medium whitespace-nowrap px-3 py-1"
+              :class="getStatusColor(item.status)"
+            >
+              {{ getStatusLabel(item.status) }}
+            </span>
+          </div>
+        </div>
+      </template>
+
+      <template #list-actions="{ item }">
+        <div class="flex gap-2">
+          <Button
+            @click.stop="openViewModal(item)"
+            severity="success"
+            type="button"
+            size="small"
+            icon="pi pi-eye"
+          />
+          <Button
+            @click.stop="handleDeleteRequest(item.id)"
+            severity="danger"
+            type="button"
+            size="small"
+            icon="pi pi-trash"
+          />
+        </div>
+      </template>
+    </List>
+  </Card>
 
   <!-- Модальное окно просмотра/редактирования заявки -->
   <ModalViewRepairRequest

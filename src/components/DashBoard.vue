@@ -11,9 +11,8 @@ import type {
 } from "@/types/RepairRequestTypes";
 import ModalViewRepairRequest from "./repair/ModalViewRepairRequest.vue";
 import ModalEditRepairRequest from "./repair/ModalEditRepairRequest.vue";
-import { getStatusColor } from "@/utils/getStatusColor";
-import { getStatusLabel } from "@/utils/getStatusLabel";
 
+import { getStatusColor, getStatusLabel } from "@/utils/entityHelpers";
 
 const requestStore = useRepairRequestStore();
 const userStore = useUserStore();
@@ -176,7 +175,7 @@ const handleDeleteRequest = async (requestId: number) => {
       <div
         class="flex items-center justify-between p-5 border-b border-(--border)"
       >
-        <h2 class="text-lg font-semibold text-(--title)">Последние заявки</h2>
+        <h2 class="text-lg font-semibold text-(--title)">Последние заявки по ремонту</h2>
         <router-link
           to="/repair-requests"
           class="text-sm text-(--blue) hover:underline font-medium"

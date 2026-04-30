@@ -11,7 +11,7 @@ import {
 } from "@/utils/mapMessageProtocol";
 
 const DEFAULT_CITY = "Астана";
-const CITY_OPTIONS = ["Астана", "Алматы", "Шымкент"];
+const CITY_OPTIONS = ["Астана"];
 
 export const useRequestAddressPicker = (requestForm: RepairRequestForm) => {
   const addressError = ref("");

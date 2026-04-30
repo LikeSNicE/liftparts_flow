@@ -28,7 +28,7 @@ export const warehouseTableHeaders: TableHeader[] = [
   },
 ];
 
-export const warehouseStatusPart: Option[] = [
+export const warehouseStatusPartData: Option[] = [
   {
     label: "Все",
     value: "",

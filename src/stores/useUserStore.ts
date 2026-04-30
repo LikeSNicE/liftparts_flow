@@ -3,7 +3,7 @@ import { ref } from "vue";
 import { api } from "@/service/apiInstance";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { useAuthStore } from "./useAuthStore";
-import { type User } from "@/types/UserTypes";
+import type { Employee } from "@/types/UserTypes";
 
 export const useUserStore = defineStore("user", () => {
   const authStore = useAuthStore();
@@ -12,11 +12,13 @@ export const useUserStore = defineStore("user", () => {
   const USER_STORAGE_KEY = "user_data";
   const storedUser = localStorage.getItem(USER_STORAGE_KEY);
 
-  const userData = ref<User | null>(storedUser ? JSON.parse(storedUser) : null);
+  const userData = ref<Employee | null>(
+    storedUser ? JSON.parse(storedUser) : null,
+  );
 
   const getAuthUser = async () => {
     try {
-      const { data } = await api.get<User>("/auth_me", {
+      const { data } = await api.get<Employee>("/auth_me", {
         headers: {
           Authorization: `Bearer ${authStore.token}`,
         },
@@ -27,6 +29,7 @@ export const useUserStore = defineStore("user", () => {
     } catch (error: unknown) {
       const errorMessage = getErrorMessage(error);
       console.log(errorMessage);
+      throw new Error("Пользователь не авторизован.");
     }
   };
 

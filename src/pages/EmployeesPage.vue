@@ -1,35 +1,30 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { Button } from "primevue";
-import { Dialog } from "primevue";
-import { InputText } from "primevue";
-import { Dropdown } from "primevue";
-import type {
-  Employee,
-  EmployeeStatus,
-  UserRole,
-  EmployeeForm,
-} from "@/types/UserTypes";
+import { Button, Dialog, InputText, Dropdown } from "primevue";
+import type { Employee, EmployeeForm } from "@/types/UserTypes";
+import { getRoleLabel, getRoleColor, getEmployeeStatus, getEmployeeColor } from "@/utils/entityHelpers";
 
 import { useEmployeeStore } from "@/stores/useEmployeeStore";
 import { storeToRefs } from "pinia";
 import Table from "@/components/Table.vue";
+import List from "@/components/List.vue";
+import Card from "@/components/Card.vue";
+import ViewMode from "@/components/ViewMode.vue";
+import SectionFilters from "@/components/SectionFilters.vue";
 import { employeeTableHeaders } from "@/data/employeesTableData";
 
-import { statusEmployeeOptions } from "@/data/statusEmployeeData";
-import { roleEmployeeOptions } from "@/data/roleEmployeeData";
-
-import { getRoleLabel } from "@/utils/getRoleLabel";
-import { getRoleColor } from "@/utils/getRoleColor";
-import { getEmployeeStatus } from "@/utils/getEmployeeStatus";
-import { getEmployeeColor } from "@/utils/getEmployeeColor";
+import { statusEmployeeOptionsData } from "@/data/statusEmployeeData";
+import { roleEmployeeOptionsData } from "@/data/roleEmployeeData";
 
 import { useFilter } from "@/composables/useFilter";
+import { useViewMode } from "@/composables/useViewMode";
 
 const { searchQuery, selectedStatus } = useFilter();
 
 const employeeStore = useEmployeeStore();
 const { employeeList } = storeToRefs(employeeStore);
+
+const { viewMode } = useViewMode();
 
 // Регистрируем метод openAddModal при монтировании
 onMounted(async () => {
@@ -148,120 +143,107 @@ const handleEmployeeDelete = () => {
 
 <template>
   <div>
-    <Table
-      header-title="Cписок сотрудников"
-      show-filters
-      :show-view-mode="false"
-      :table-headers="employeeTableHeaders"
-      :data="filteredUser"
-      :search-query="searchQuery"
-      :selected-status="selectedStatus"
-      :status-options-data="statusEmployeeOptions"
-      @update:searchQuery="searchQuery = $event"
-      @update:selectedStatus="selectedStatus = $event"
-    >
-      <template #cell-fullname="{ item }">
-        {{ item.lastname }} {{ item.username }} {{ item.middlename }}
-      </template>
-
-      <template #cell-role="{ value, item }">
-        <span
-          class="px-2 py-1 rounded-full text-xs font-medium"
-          :class="[getRoleColor(item.userrole)]"
-        >
-          {{ getRoleLabel(item.userrole) }}
-        </span>
-      </template>
-
-      <template #cell-status="{ value }">
-        <span
-          class="px-2 py-1 rounded-full text-xs font-medium"
-          :class="getEmployeeColor(value)"
-          >{{ getEmployeeStatus(value) }}</span
-        >
-      </template>
-
-      <template #cell-actions="{ item }">
-        <Button
-          label="Просмотр"
-          severity="success"
-          size="small"
-          @click.stop="openEditModal(item)"
-        />
-      </template>
-    </Table>
-
-    <!-- <div class="employees-card bg-white rounded-lg p-6">
-      <h2 class="text-xl font-semibold text-(--title) mb-4">
-        Список сотрудников
-      </h2>
-
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead>
-            <tr class="text-left bg-(--bg) text-(--text)">
-              <th class="px-4 py-3 font-semibold">id</th>
-              <th class="px-4 py-3 font-semibold">ФИО</th>
-              <th class="px-4 py-3 font-semibold">Роль</th>
-              <th class="px-4 py-3 font-semibold">Статус</th>
-              <th class="px-4 py-3 font-semibold rounded-tr-lg">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="employee in employeeStore.employeeList"
-              :key="employee.id"
-              class="border-t border-(--border) hover:bg-(--bg)"
-            >
-              <td class="px-4 py-3 text-(--text)">{{ employee.id }}</td>
-              <td class="px-4 py-3 text-(--text)">
-                {{ employee.lastname }} {{ employee.username }}
-                {{ employee.middlename }}
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  class="px-2 py-1 rounded text-xs font-medium"
-                  :class="{
-                    'bg-(--blue-bg) text-(--blue)':
-                      employee.userrole === 'mechanic',
-                    'bg-(--purple-bg) text-(--purple)':
-                      employee.userrole === 'admin',
-                    'bg-orange-100 text-orange-700':
-                      employee.userrole === 'warehouse_operator',
-                  }"
-                >
-                  {{ getRoleLabel(employee.userrole) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  class="px-2 py-1 rounded text-xs font-medium"
-                  :class="getEmployeeColor(employee.status)"
-                >
-                  {{ getEmployeeStatus(employee.status) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <Button
-                  label="Просмотр"
-                  severity="success"
-                  size="small"
-                  @click.stop="openEditModal(employee)"
-                />
-              </td>
-            </tr>
-            <tr v-if="employeeList.length === 0">
-              <td
-                colspan="4"
-                class="px-4 py-8 text-center text-(--placeholder)"
-              >
-                Список сотрудников пуст
-              </td>
-            </tr>
-          </tbody>
-        </table>
+    <Card>
+      <div class="mb-4 flex items-center justify-between">
+        <h5 class="font-semibold text-(--title)">Список сотрудников</h5>
+        <ViewMode />
       </div>
-    </div> -->
+
+      <SectionFilters
+        @update:searchQuery="searchQuery = $event"
+        @update:selectedStatus="selectedStatus = $event"
+        :search-query="searchQuery"
+        :selected-status="selectedStatus"
+        :status-options-data="statusEmployeeOptionsData"
+      />
+
+      <Table
+        v-if="viewMode === 'table'"
+        :table-headers="employeeTableHeaders"
+        :data="filteredUser"
+      >
+        <template #cell-fullname="{ item }">
+          {{ item.lastname }} {{ item.username }} {{ item.middlename }}
+        </template>
+
+        <template #cell-role="{ item }">
+          <span
+            class="px-2 py-1 rounded-full text-xs font-medium"
+            :class="[getRoleColor(item.userrole)]"
+          >
+            {{ getRoleLabel(item.userrole) }}
+          </span>
+        </template>
+
+        <template #cell-status="{ value }">
+          <span
+            class="px-2 py-1 rounded-full text-xs font-medium"
+            :class="getEmployeeColor(value)"
+          >
+            {{ getEmployeeStatus(value) }}
+          </span>
+        </template>
+
+        <template #cell-actions="{ item }">
+          <Button
+            label="Просмотр"
+            severity="success"
+            size="small"
+            @click.stop="openEditModal(item)"
+          />
+        </template>
+
+        <template #empty>
+          <div class="text-center py-12">
+            <i class="pi pi-inbox text-6xl text-gray-300"></i>
+            <p class="mt-4 text-gray-600">Сотрудников пока нет</p>
+          </div>
+        </template>
+      </Table>
+
+      <List v-if="viewMode === 'list'" :data="filteredUser">
+        <template #list-content="{ item }">
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap gap-3 text-sm text-(--text)">
+              <span>
+                <span class="text-gray-500">ФИО:</span>
+                {{ item.lastname }} {{ item.username }} {{ item.middlename }}
+              </span>
+              <span>
+                <span class="text-gray-500">Email:</span>
+                {{ item.email }}
+              </span>
+            </div>
+
+            <div class="flex gap-2">
+              <span
+                class="rounded-full text-xs font-medium whitespace-nowrap px-3 py-1"
+                :class="getRoleColor(item.userrole)"
+              >
+                {{ getRoleLabel(item.userrole) }}
+              </span>
+
+              <span
+                class="rounded-full text-xs font-medium whitespace-nowrap px-3 py-1"
+                :class="getEmployeeColor(item.status)"
+              >
+                {{ getEmployeeStatus(item.status) }}
+              </span>
+            </div>
+          </div>
+        </template>
+
+        <template #list-actions="{ item }">
+          <Button
+            @click.stop="openEditModal(item)"
+            severity="success"
+            type="button"
+            size="small"
+            icon="pi pi-eye"
+          />
+        </template>
+      </List>
+    </Card>
 
     <!-- Модальное окно добавления/редактирования (ТОЛЬКО ПО ЦЕНТРУ) -->
     <Dialog
@@ -325,7 +307,7 @@ const handleEmployeeDelete = () => {
           <Dropdown
             id="role"
             v-model="employeeForm.userrole"
-            :options="roleEmployeeOptions"
+            :options="roleEmployeeOptionsData"
             option-label="label"
             option-value="value"
             class="flex-auto border"
@@ -339,7 +321,7 @@ const handleEmployeeDelete = () => {
           <Dropdown
             id="status"
             v-model="employeeForm.status"
-            :options="statusEmployeeOptions"
+            :options="statusEmployeeOptionsData"
             option-label="label"
             option-value="value"
             class="flex-auto"

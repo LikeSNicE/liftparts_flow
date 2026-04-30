@@ -13,11 +13,14 @@ import { useModalStore } from "@/stores/useModalStore";
 import { usePartsRequestStore } from "@/stores/usePartsRequestStore";
 import { useRole } from "@/composables/useRole";
 import { statusOptionsData } from "@/data/statusOptionsData";
-import { getStatusLabel } from "@/utils/getStatusLabel";
-import { getStatusColor } from "@/utils/getStatusColor";
+import {
+  getStatusColor,
+  getStatusLabel,
+  getUrgencyLabel,
+  getUrgencyColor,
+} from "@/utils/entityHelpers";
 import { urgencyOptions } from "@/data/partsRequestData";
-import { getUrgencyColor } from "@/utils/getUrgencyOption";
-import { getUrgencyLabel } from "@/utils/getUrgencyLabel";
+
 import { formatDate } from "@/utils/formatDate";
 import { useUserStore } from "@/stores/useUserStore";
 import { storeToRefs } from "pinia";

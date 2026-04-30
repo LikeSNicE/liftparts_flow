@@ -16,8 +16,6 @@ const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search";
 
 const cityAliases: Record<string, string[]> = {
   Астана: ["астана", "astana", "нур султан", "нур-султан", "nur sultan", "nur-sultan"],
-  Алматы: ["алматы", "almaty", "alma ata", "alma-ata"],
-  Шымкент: ["шымкент", "shymkent", "chimkent"],
 };
 
 const matchesCity = (displayName: string, city?: string) => {

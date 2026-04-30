@@ -3,19 +3,15 @@ import { api } from "@/service/apiInstance";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { getErrorMessage } from "@/utils/getErrorMessage";
-import type {
-  userRegisterPayload,
-  UserRole,
-} from "@/types/UserTypes";
+import type { userRegisterPayload, UserRole } from "@/types/UserTypes";
 
 export const useRegisterStore = defineStore("register", () => {
   const email = ref("");
   const username = ref("");
   const lastname = ref("");
+  const middlename = ref("");
   const userrole = ref<UserRole>("mechanic");
   const password = ref("");
-
-  const middlename = ref("");
 
   const roles = [
     { label: "Механик", value: "mechanic" },
@@ -42,7 +38,7 @@ export const useRegisterStore = defineStore("register", () => {
       userrole: userrole.value,
       password: password.value,
       middlename: middlename.value || undefined,
-      status: "inactive", // Новый пользователь по умолчанию имеет статус "неактивный"
+      status: "inactive", // Новый пользователь по умолчанию имеет статус "неактивный",
     };
 
     try {

@@ -36,9 +36,9 @@ const handleHeaderBtn = () => {
 
 <template>
   <header
-    class="header! py-2 px-4 bg-(--white) flex items-center justify-between sticky top-0 border-b border-(--border) z-10"
+    class="header! px-4 bg-(--white) flex items-center justify-between sticky top-0 border-b border-(--border) z-10 h-16"
   >
-    <h5 class="text-(--title) font-semibold">{{ headerTitle }}</h5>
+    <h4 class="text-(--title) font-semibold">{{ headerTitle }}</h4>
 
     <Button
       v-if="showAddButton"

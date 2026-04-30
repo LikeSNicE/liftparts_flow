@@ -16,7 +16,7 @@ import { useModalStore } from "@/stores/useModalStore";
 import { usePartsRequestStore } from "@/stores/usePartsRequestStore";
 import { usePartsStore } from "@/stores/usePartsStore";
 import { urgencyOptions } from "@/data/partsRequestData";
-import { getUrgencyColor } from "@/utils/getUrgencyOption";
+import { getUrgencyColor } from "@/utils/entityHelpers";
 
 const modalStore = useModalStore();
 const partsRequestStore = usePartsRequestStore();

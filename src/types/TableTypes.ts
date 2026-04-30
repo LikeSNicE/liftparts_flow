@@ -3,4 +3,4 @@ export type TableHeader = {
   value: string;
 };
 
-export type ViewModeTable = "table" | "list";
+

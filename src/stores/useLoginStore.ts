@@ -27,6 +27,7 @@ export const useLoginStore = defineStore("login", () => {
     const payloadUser = {
       email: email.value,
       password: password.value,
+      lastLogin: new Date().toISOString()
     };
 
     try {
@@ -37,6 +38,7 @@ export const useLoginStore = defineStore("login", () => {
         reset();
         await userStore.getAuthUser();
         await router.push("/");
+        console.log(payloadUser);
       } else {
         loginError.value = "Неверный email или пароль";
         console.log(`Ошибка авторизации. ${statusText}`);

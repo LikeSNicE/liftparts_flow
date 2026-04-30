@@ -1,6 +1,6 @@
 import type { Option } from "@/types/OptionsTypes";
 
-export const statusEmployeeOptions: Option[] = [
+export const statusEmployeeOptionsData: Option[] = [
   {
     label: "Все",
     value: "",

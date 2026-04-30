@@ -1,39 +1,129 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { Button } from "primevue";
-import { InputText } from "primevue";
-import { InputSwitch } from "primevue";
-import { FileUpload } from "primevue";
-import type {  NotificationSettings, TwoFASettings } from "@/types/UserTypes";
-import { useUserStore } from "@/stores/useUserStore";
+import { ref, onMounted } from "vue";
+import { Button, InputText, InputMask } from "primevue";
 
+import { useUserStore } from "@/stores/useUserStore";
+import { getEmployeeStatus, getRoleLabel } from "@/utils/entityHelpers";
+import { useEmployeeStore } from "@/stores/useEmployeeStore";
+import { storeToRefs } from "pinia";
+import { api } from "@/service/apiInstance";
+import { getErrorMessage } from "@/utils/getErrorMessage";
+
+// Данные пользователяavatarPreview
 const userStore = useUserStore();
+const { userData } = storeToRefs(userStore);
+const employeeStore = useEmployeeStore();
 
 // Активная вкладка
 const activeTab = ref<"profile" | "security" | "notifications">("profile");
 
-// Данные пользователя
-const userData = computed(() => userStore.userData);
-
 // Загруженный аватар
 const avatarPreview = ref<string | null>(null);
+const avatarFile = ref<File | null>(null);
+const isUploadingAvatar = ref(false);
+const fileInput = ref<HTMLInputElement | null>(null);
 
-// Форма профиля
-// const profileForm = ref<Employee>({
+// Форма профиля для редактирования
+const profileForm = ref({
+  username: "",
+  lastname: "",
+  middlename: "",
+  email: "",
+  phone: "",
+  avatar: "",
+});
 
-//   username: "",
-//   lastname: "",
-//   email: "",
-//   phone: "",
-//   avatar: "",
-//   userrole: "mechanic",
-//   status: "inactive",
-// });
+// Инициализация формы при загрузке
+const initProfileForm = () => {
+  if (userData.value) {
+    profileForm.value = {
+      username: userData.value.username || "",
+      lastname: userData.value.lastname || "",
+      middlename: userData.value.middlename || "",
+      email: userData.value.email || "",
+      phone: userData.value.phone || "",
+      avatar: userData.value.avatar || "",
+    };
+    // Устанавливаем превью аватара из userData
+    avatarPreview.value = userData.value.avatar || null;
+  }
+};
 
+// ========== РАБОТА С АВАТАРОМ ==========
+
+// Шаг 1: Выбор файла и локальное превью
+const onFileChange = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+
+  if (!file) return;
+
+  // Проверка размера (максимум 1MB)
+  if (file.size > 1000000) {
+    alert("Файл слишком большой. Максимум 1MB");
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    alert("Файл должен быть изображением");
+    return;
+  }
+
+  avatarFile.value = file;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    avatarPreview.value = reader.result as string;
+  };
+
+  reader.readAsDataURL(file);
+};
+
+// Шаг 2: Загрузка файла на сервер
+
+const uploadAvatarToServer = async (): Promise<string | null> => {
+  if (!avatarFile.value) return null;
+
+  try {
+    isUploadingAvatar.value = true;
+
+    const formData = new FormData();
+    formData.append("file", avatarFile.value);
+
+    const { data } = await api.post<{ id: number; url: string }>(
+      "/uploads",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    return data.url;
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+    console.log(errorMessage.message);
+    return null;
+  } finally {
+    isUploadingAvatar.value = false;
+  }
+};
+
+// Шаг 3 Удаление аватара
+
+const removeAvatar = () => {
+  avatarPreview.value = null;
+  avatarFile.value = null;
+  profileForm.value.avatar = "";
+};
+
+// ========== РАБОТА С ВКЛАДКОЙ БЕЗОПАСНОТЬЮ ==========
 // Форма смены пароля
 const isChangingPassword = ref(false);
+
 const passwordForm = ref({
-  currentPassword: "",
+  // currentPassword: "",
   newPassword: "",
   confirmPassword: "",
 });
@@ -41,39 +131,47 @@ const passwordForm = ref({
 const passwordError = ref("");
 const passwordSuccess = ref("");
 
-// 2FA настройки
-const twoFA = ref<TwoFASettings>({
-  enabled: false,
-});
-const twoFACode = ref("");
-const twoFAError = ref("");
-const twoFASuccess = ref("");
-const showTwoFASetup = ref(false);
-const twoFASecret = ref("");
-const twoFAQRCode = ref("");
+const startChangePassword = () => {
+  passwordForm.value = {
+    newPassword: "",
+    confirmPassword: "",
+  };
+  isChangingPassword.value = true;
+  passwordError.value = "";
+  passwordSuccess.value = "";
+};
 
-// Настройки уведомлений
-const notifications = ref<NotificationSettings>({
-  emailNotifications: true,
-  pushNotifications: true,
-  newRequests: true,
-  orderStatus: true,
-});
+const savePassword = async () => {
+  passwordSuccess.value = "";
+  passwordError.value = "";
 
-// Инициализация формы при загрузке
-const initProfileForm = () => {
-  if (userData.value) {
-    // profileForm.value = {
-    //   // id: userData.value.id,
-    //   username: userData.value.username,
-    //   lastname: userData.value.lastname || "",
-    //   email: userData.value.email,
-    //   phone: "",
-    //   avatar: "",
-    //   userrole: userData.value.userrole,
-    //   status: userData.value.status,
-    // };
+  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+    passwordError.value = "Пароли не совпадают";
+    return;
   }
+
+  if (!userData.value) return;
+
+  try {
+    await employeeStore.updateEmployee(userData.value.id, {
+      ...userData.value,
+      password: passwordForm.value.newPassword.trim(),
+    });
+    // passwordForm.value.currentPassword = passwordForm.value.newPassword.trim();
+
+    passwordSuccess.value = "Пароль успешно изменен";
+
+    console.log(passwordForm.value);
+  } catch (error) {}
+};
+
+const cancelChangePassword = () => {
+  passwordForm.value = {
+    // currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  };
+  isChangingPassword.value = false;
 };
 
 onMounted(() => {
@@ -81,114 +179,57 @@ onMounted(() => {
 });
 
 // Сохранить изменения профиля
-// const saveProfile = () => {
-//   // TODO: API вызов для обновления профиля
-//   // console.log("Сохранение профиля:", profileForm.value);
-//   // alert("Профиль успешно обновлён!");
-// };
+const saveProfile = async () => {
+  if (!userData.value) return;
 
-// Загрузка аватара
-const onAvatarUpload = (event: any) => {
-  const file = event.files[0];
-  const reader = new FileReader();
-  reader.onload = (e: any) => {
-    avatarPreview.value = e.target.result;
-    // profileForm.value.avatar = e.target.result;
-  };
-  reader.readAsDataURL(file);
-};
+  try {
+    // Если выбран новый файл, сначала загружаем его
+    if (avatarFile.value) {
+      const avatarUrl = await uploadAvatarToServer();
+      if (avatarUrl) {
+        profileForm.value.avatar = avatarUrl;
+      }
+    }
 
-// Смена пароля
-const startChangePassword = () => {
-  passwordForm.value = {
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  };
-  passwordError.value = "";
-  passwordSuccess.value = "";
-  isChangingPassword.value = true;
-};
+    // Сохраняем профиль (без дополнительной проверки)
+    await employeeStore.updateEmployee(userData.value.id, {
+      ...userData.value,
+      username: profileForm.value.username,
+      lastname: profileForm.value.lastname,
+      middlename: profileForm.value.middlename,
+      email: profileForm.value.email,
+      phone: profileForm.value.phone,
+      avatar: profileForm.value.avatar,
+    });
 
-const savePassword = () => {
-  passwordError.value = "";
-  passwordSuccess.value = "";
-
-  if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
-    passwordError.value = "Новые пароли не совпадают";
-    return;
-  }
-
-  if (passwordForm.value.newPassword.length < 6) {
-    passwordError.value = "Пароль должен быть не менее 6 символов";
-    return;
-  }
-
-  // TODO: API вызов для смены пароля
-  console.log("Смена пароля:", passwordForm.value);
-  passwordSuccess.value = "Пароль успешно изменён";
-  isChangingPassword.value = false;
-};
-
-const cancelChangePassword = () => {
-  isChangingPassword.value = false;
-  passwordError.value = "";
-  passwordSuccess.value = "";
-};
-
-// 2FA функции
-const enableTwoFA = () => {
-  // TODO: API вызов для получения QR-кода
-  twoFASecret.value = "JBSWY3DPEHPK3PXP";
-  twoFAQRCode.value = "https://api.qrserver.com/v1/create-qr-code/?data=otpauth://totp/LiftPartsFlow:user@example.com?secret=JBSWY3DPEHPK3PXP&issuer=LiftPartsFlow&size=200x200";
-  showTwoFASetup.value = true;
-  twoFAError.value = "";
-};
-
-const confirmTwoFA = () => {
-  // TODO: API вызов для подтверждения 2FA
-  if (twoFACode.value.length === 6) {
-    twoFA.value.enabled = true;
-    twoFASuccess.value = "2FA успешно включена";
-    showTwoFASetup.value = false;
-    twoFACode.value = "";
-  } else {
-    twoFAError.value = "Неверный код";
+    // Обновляем userData после сохранения
+    await userStore.getAuthUser();
+    initProfileForm();
+    avatarFile.value = null;
+  } catch (error: unknown) {
+    const errorMessage = getErrorMessage(error);
+    console.log(errorMessage.message);
+    throw new Error(
+      "Не удалось сохранить профиль. Пожалуйста, попробуйте позже.",
+    );
   }
 };
 
-const disableTwoFA = () => {
-  // TODO: API вызов для отключения 2FA
-  twoFA.value.enabled = false;
-  twoFASuccess.value = "2FA отключена";
-  twoFACode.value = "";
-};
-
-const cancelTwoFASetup = () => {
-  showTwoFASetup.value = false;
-  twoFAError.value = "";
-  twoFASecret.value = "";
-  twoFAQRCode.value = "";
-};
-
-// Сохранение настроек уведомлений
-const saveNotificationSettings = () => {
-  // TODO: API вызов для сохранения настроек
-  console.log("Настройки уведомлений:", notifications.value);
-  alert("Настройки уведомлений сохранены!");
-};
+console.log(userData.value);
 </script>
 
 <template>
   <div class="settings-page">
-    <h1 class="text-2xl font-bold text-(--title) mb-6">Настройки</h1>
-
     <!-- Вкладки -->
     <div class="flex gap-2 mb-6 border-b border-(--border)">
       <button
         @click="activeTab = 'profile'"
         class="px-4 py-2 font-medium transition-colors border-b-2"
-        :class="activeTab === 'profile' ? 'text-(--blue) border-(--blue)' : 'text-(--placeholder) border-transparent hover:text-(--text)'"
+        :class="
+          activeTab === 'profile'
+            ? 'text-(--blue) border-(--blue)'
+            : 'text-(--placeholder) border-transparent hover:text-(--text)'
+        "
       >
         <i class="pi pi-user mr-2"></i>
         Профиль
@@ -196,18 +237,14 @@ const saveNotificationSettings = () => {
       <button
         @click="activeTab = 'security'"
         class="px-4 py-2 font-medium transition-colors border-b-2"
-        :class="activeTab === 'security' ? 'text-(--blue) border-(--blue)' : 'text-(--placeholder) border-transparent hover:text-(--text)'"
+        :class="
+          activeTab === 'security'
+            ? 'text-(--blue) border-(--blue)'
+            : 'text-(--placeholder) border-transparent hover:text-(--text)'
+        "
       >
         <i class="pi pi-shield mr-2"></i>
         Безопасность
-      </button>
-      <button
-        @click="activeTab = 'notifications'"
-        class="px-4 py-2 font-medium transition-colors border-b-2"
-        :class="activeTab === 'notifications' ? 'text-(--blue) border-(--blue)' : 'text-(--placeholder) border-transparent hover:text-(--text)'"
-      >
-        <i class="pi pi-bell mr-2"></i>
-        Уведомления
       </button>
     </div>
 
@@ -216,11 +253,17 @@ const saveNotificationSettings = () => {
       <div class="grid gap-6 md:grid-cols-3">
         <!-- Аватар -->
         <div class="md:col-span-1">
-          <div class="settings-card bg-white rounded-lg border border-(--border) p-6">
-            <h2 class="text-lg font-semibold text-(--title) mb-4">Фото профиля</h2>
-            
+          <div
+            class="settings-card bg-white rounded-lg border border-(--border) p-6"
+          >
+            <h2 class="text-lg font-semibold text-(--title) mb-4">
+              Фото профиля
+            </h2>
+
             <div class="flex flex-col items-center gap-4">
-              <div class="avatar-container w-32 h-32 rounded-full bg-(--bg) flex items-center justify-center overflow-hidden border-2 border-(--border)">
+              <div
+                class="avatar-container w-32 h-32 rounded-full bg-(--bg) flex items-center justify-center overflow-hidden border-2 border-(--border)"
+              >
                 <img
                   v-if="avatarPreview"
                   :src="avatarPreview"
@@ -228,18 +271,45 @@ const saveNotificationSettings = () => {
                   class="w-full h-full object-cover"
                 />
                 <i v-else class="pi pi-user text-4xl text-(--placeholder)"></i>
+
+                <!-- Индикатор загрузки -->
+                <!-- <div
+                  v-if="isUploadingAvatar"
+                  class="absolute inset-0 bg-opacity-50 flex items-center justify-center "
+                >
+                  <i class="pi pi-spin pi-spinner text-white text-2xl"></i>
+                </div> -->
               </div>
-              
-              <FileUpload
-                mode="basic"
-                name="avatar"
-                accept="image/*"
-                :max-file-size="1000000"
-                @select="onAvatarUpload"
-                label="Загрузить фото"
-                class="w-full"
-              />
-              
+
+              <div class="flex flex-col gap-2 w-full">
+                <input
+                  ref="fileInput"
+                  type="file"
+                  accept="image/*"
+                  @change="onFileChange"
+                  class="hidden"
+                />
+
+                <Button
+                  @click="fileInput?.click()"
+                  :label="avatarPreview ? 'Изменить фото' : 'Загрузить фото'"
+                  icon="pi pi-upload"
+                  :disabled="isUploadingAvatar"
+                  class="w-full"
+                />
+
+                <Button
+                  v-if="avatarPreview"
+                  @click="removeAvatar"
+                  label="Удалить фото"
+                  severity="danger"
+                  outlined
+                  size="small"
+                  class="w-full"
+                  :disabled="isUploadingAvatar"
+                />
+              </div>
+
               <p class="text-xs text-(--placeholder) text-center">
                 JPG, PNG до 1MB
               </p>
@@ -247,19 +317,42 @@ const saveNotificationSettings = () => {
           </div>
 
           <!-- Информация о роли -->
-          <div class="settings-card bg-white rounded-lg border border-(--border) p-6 mt-6">
-            <h2 class="text-lg font-semibold text-(--title) mb-4">Информация</h2>
-            <div class="space-y-3">
+          <div
+            v-if="userData"
+            class="settings-card bg-white rounded-lg border border-(--border) p-6 mt-6"
+          >
+            <h2 class="text-lg font-semibold text-(--title) mb-4">
+              Информация
+            </h2>
+            <div class="space-y-3 grid grid-cols-2 gap-4">
               <div>
-                <label class="text-xs text-(--placeholder) uppercase">Роль</label>
-                <p class="text-(--text) font-medium capitalize">{{ userData?.userrole }}</p>
+                <div>
+                  <label class="text-xs text-(--placeholder) uppercase"
+                    >Роль</label
+                  >
+                  <p class="text-(--text) font-medium capitalize">
+                    {{ getRoleLabel(userData.userrole) }}
+                  </p>
+                </div>
               </div>
               <div>
-                <label class="text-xs text-(--placeholder) uppercase">Дата регистрации</label>
+                <label class="text-xs text-(--placeholder) uppercase"
+                  >Статус</label
+                >
+                <p class="text-(--text) font-medium capitalize">
+                  {{ getEmployeeStatus(userData.status) }}
+                </p>
+              </div>
+              <div>
+                <label class="text-xs text-(--placeholder) uppercase"
+                  >Дата регистрации</label
+                >
                 <p class="text-(--text) font-medium">—</p>
               </div>
               <div>
-                <label class="text-xs text-(--placeholder) uppercase">Последний вход</label>
+                <label class="text-xs text-(--placeholder) uppercase"
+                  >Последний вход</label
+                >
                 <p class="text-(--text) font-medium">—</p>
               </div>
             </div>
@@ -267,30 +360,51 @@ const saveNotificationSettings = () => {
         </div>
 
         <!-- Форма профиля -->
-        <!-- <div class="md:col-span-2">
-          <div class="settings-card bg-white rounded-lg border border-(--border) p-6">
-            <h2 class="text-lg font-semibold text-(--title) mb-4">Личная информация</h2>
-            
+        <div class="md:col-span-2" v-if="userData">
+          <div
+            class="settings-card bg-white rounded-lg border border-(--border) p-6"
+          >
+            <h2 class="text-lg font-semibold text-(--title) mb-4">
+              Личная информация
+            </h2>
+
             <div class="space-y-4">
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="flex flex-col gap-2">
-                  <label for="username" class="text-sm text-(--text)">ФИО</label>
+                  <label for="username" class="text-sm text-(--text)"
+                    >Имя</label
+                  >
                   <InputText
                     id="username"
-                    v-model="profileForm.username"
                     class="w-full"
                     placeholder="Иванов Иван"
+                    v-model="profileForm.username"
                   />
                 </div>
                 <div class="flex flex-col gap-2">
-                  <label for="lastname" class="text-sm text-(--text)">Фамилия</label>
+                  <label for="lastname" class="text-sm text-(--text)"
+                    >Фамилия</label
+                  >
                   <InputText
                     id="lastname"
-                    v-model="profileForm.lastname"
                     class="w-full"
                     placeholder="Иванов"
+                    v-model="profileForm.lastname"
                   />
                 </div>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <label for="middlename" class="text-sm text-(--text)"
+                  >Отчество</label
+                >
+                <InputText
+                  id="middlename"
+                  v-model="profileForm.middlename"
+                  type="text"
+                  class="w-full"
+                  placeholder="Иванович"
+                />
               </div>
 
               <div class="flex flex-col gap-2">
@@ -306,12 +420,12 @@ const saveNotificationSettings = () => {
 
               <div class="flex flex-col gap-2">
                 <label for="phone" class="text-sm text-(--text)">Телефон</label>
-                <InputText
+                <InputMask
                   id="phone"
-                  v-model="profileForm.phone"
-                  type="tel"
+                  mask="9-(999)-999-99-99"
+                  placeholder="9-(999)-999-99-99"
                   class="w-full"
-                  placeholder="+7 (___) ___-__-__"
+                  v-model="profileForm.phone"
                 />
               </div>
 
@@ -324,7 +438,9 @@ const saveNotificationSettings = () => {
               </div>
             </div>
           </div>
-        </div> -->
+        </div>
+
+        <div v-else>Данные пользователя не найдены</div>
       </div>
     </div>
 
@@ -332,9 +448,13 @@ const saveNotificationSettings = () => {
     <div v-if="activeTab === 'security'" class="settings-content">
       <div class="grid gap-6 md:grid-cols-2">
         <!-- Смена пароля -->
-        <div class="settings-card bg-white rounded-lg border border-(--border) p-6">
-          <h2 class="text-lg font-semibold text-(--title) mb-4">Смена пароля</h2>
-          
+        <div
+          class="settings-card bg-white rounded-lg border border-(--border) p-6"
+        >
+          <h2 class="text-lg font-semibold text-(--title) mb-4">
+            Смена пароля
+          </h2>
+
           <template v-if="!isChangingPassword">
             <p class="text-(--placeholder) text-sm mb-4">
               Регулярно меняйте пароль для безопасности вашего аккаунта
@@ -364,18 +484,23 @@ const saveNotificationSettings = () => {
                 {{ passwordSuccess }}
               </div>
 
-              <div class="flex flex-col gap-2">
-                <label for="current-password" class="text-sm text-(--text)">Текущий пароль</label>
+              <!-- <div class="flex flex-col gap-2">
+                <label for="current-password" class="text-sm text-(--text)"
+                  >Текущий пароль</label
+                >
+
                 <InputText
                   id="current-password"
                   v-model="passwordForm.currentPassword"
-                  type="password"
+                  type="text"
                   class="w-full"
                   placeholder="••••••••"
                 />
-              </div>
+              </div> -->
               <div class="flex flex-col gap-2">
-                <label for="new-password" class="text-sm text-(--text)">Новый пароль</label>
+                <label for="new-password" class="text-sm text-(--text)"
+                  >Новый пароль</label
+                >
                 <InputText
                   id="new-password"
                   v-model="passwordForm.newPassword"
@@ -385,7 +510,9 @@ const saveNotificationSettings = () => {
                 />
               </div>
               <div class="flex flex-col gap-2">
-                <label for="confirm-password" class="text-sm text-(--text)">Подтвердите пароль</label>
+                <label for="confirm-password" class="text-sm text-(--text)"
+                  >Подтвердите пароль</label
+                >
                 <InputText
                   id="confirm-password"
                   v-model="passwordForm.confirmPassword"
@@ -409,197 +536,12 @@ const saveNotificationSettings = () => {
             </div>
           </template>
         </div>
-
-        <!-- 2FA -->
-        <div class="settings-card bg-white rounded-lg border border-(--border) p-6">
-          <h2 class="text-lg font-semibold text-(--title) mb-4">Двухфакторная аутентификация</h2>
-          
-          <template v-if="!twoFA.enabled">
-            <p class="text-(--placeholder) text-sm mb-4">
-              Защитите свой аккаунт с помощью двухфакторной аутентификации
-            </p>
-            
-            <template v-if="!showTwoFASetup">
-              <Button
-                label="Включить 2FA"
-                icon="pi pi-shield"
-                class="bg-(--blue) border-none"
-                @click="enableTwoFA"
-              />
-            </template>
-
-            <template v-else>
-              <div class="space-y-4">
-                <div
-                  v-if="twoFAError"
-                  class="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm border border-red-200"
-                >
-                  <i class="pi pi-exclamation-circle mr-2"></i>
-                  {{ twoFAError }}
-                </div>
-
-                <div class="flex flex-col items-center gap-4">
-                  <p class="text-sm text-(--text) text-center">
-                    Отсканируйте QR-код в приложении аутентификации
-                  </p>
-                  <img
-                    :src="twoFAQRCode"
-                    alt="QR Code"
-                    class="w-48 h-48 border rounded-lg"
-                  />
-                  <p class="text-xs text-(--placeholder) font-mono">
-                    {{ twoFASecret }}
-                  </p>
-                </div>
-
-                <div class="flex flex-col gap-2">
-                  <label for="twoFA-code" class="text-sm text-(--text)">Код из приложения</label>
-                  <InputText
-                    id="twoFA-code"
-                    v-model="twoFACode"
-                    type="text"
-                    class="w-full"
-                    placeholder="123456"
-                    maxlength="6"
-                  />
-                </div>
-
-                <div class="flex justify-end gap-2 pt-2">
-                  <Button
-                    label="Отмена"
-                    severity="secondary"
-                    @click="cancelTwoFASetup"
-                  />
-                  <Button
-                    label="Подтвердить"
-                    class="bg-(--blue) border-none"
-                    @click="confirmTwoFA"
-                  />
-                </div>
-              </div>
-            </template>
-          </template>
-
-          <template v-else>
-            <div class="flex items-center gap-3 mb-4">
-              <i class="pi pi-check-circle text-green-500 text-2xl"></i>
-              <div>
-                <p class="font-medium text-(--title)">2FA включена</p>
-                <p class="text-sm text-(--placeholder)">Ваш аккаунт защищён</p>
-              </div>
-            </div>
-            <Button
-              label="Отключить 2FA"
-              icon="pi pi-shield"
-              severity="danger"
-              text
-              @click="disableTwoFA"
-            />
-          </template>
-
-          <div
-            v-if="twoFASuccess"
-            class="bg-green-50 text-green-600 px-4 py-2 rounded-lg text-sm border border-green-200 mt-4"
-          >
-            <i class="pi pi-check-circle mr-2"></i>
-            {{ twoFASuccess }}
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Вкладка: Уведомления -->
-    <div v-if="activeTab === 'notifications'" class="settings-content">
-      <div class="settings-card bg-white rounded-lg border border-(--border) p-6 max-w-2xl">
-        <h2 class="text-lg font-semibold text-(--title) mb-4">Настройки уведомлений</h2>
-        
-        <div class="space-y-4">
-          <div
-            v-if="notifications.emailNotifications || notifications.pushNotifications"
-            class="bg-(--blue-bg) text-(--blue) px-4 py-3 rounded-lg text-sm border border-(--blue)"
-          >
-            <i class="pi pi-info-circle mr-2"></i>
-            Настройте какие уведомления вы хотите получать
-          </div>
-
-          <!-- Общие настройки -->
-          <div class="border-b border-(--border) pb-4">
-            <h3 class="font-medium text-(--title) mb-3">Общие</h3>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-(--text)">Email-уведомления</p>
-                  <p class="text-xs text-(--placeholder)">Получать уведомления на почту</p>
-                </div>
-                <InputSwitch
-                  v-model="notifications.emailNotifications"
-                  class="ml-4"
-                />
-              </div>
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-(--text)">Push-уведомления</p>
-                  <p class="text-xs text-(--placeholder)">Получать push-уведомления в браузере</p>
-                </div>
-                <InputSwitch
-                  v-model="notifications.pushNotifications"
-                  class="ml-4"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- Типы уведомлений -->
-          <div class="pb-4">
-            <h3 class="font-medium text-(--title) mb-3">Типы уведомлений</h3>
-            <div class="space-y-3">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-(--text)">О новых заявках</p>
-                  <p class="text-xs text-(--placeholder)">Уведомлять о поступлении новых заявок</p>
-                </div>
-                <InputSwitch
-                  v-model="notifications.newRequests"
-                  class="ml-4"
-                  :disabled="!notifications.emailNotifications && !notifications.pushNotifications"
-                />
-              </div>
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-(--text)">О статусе заказов</p>
-                  <p class="text-xs text-(--placeholder)">Уведомлять об изменении статуса заказов</p>
-                </div>
-                <InputSwitch
-                  v-model="notifications.orderStatus"
-                  class="ml-4"
-                  :disabled="!notifications.emailNotifications && !notifications.pushNotifications"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="flex justify-end pt-4">
-            <Button
-              label="Сохранить настройки"
-              class="bg-(--blue) border-none"
-              @click="saveNotificationSettings"
-            />
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.settings-page {
-  padding: 2rem;
-}
-
-.settings-content {
-  max-width: 1200px;
-}
-
 .settings-card {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }

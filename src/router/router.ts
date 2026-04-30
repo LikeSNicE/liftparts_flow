@@ -34,24 +34,6 @@ const routes = [
             },
           },
           {
-            path: "/mechanic",
-            component: () => import("@/pages/MechanicPage.vue"),
-            meta: {
-              requiresAuth: true,
-              roles: ["admin", "mechanic"],
-              title: "Панель механика",
-            },
-          },
-          {
-            path: "/manager",
-            component: () => import("@/pages/ManagerPage.vue"),
-            meta: {
-              requiresAuth: true,
-              roles: ["admin", "manager"],
-              title: "Панель механика",
-            },
-          },
-          {
             path: "/test",
             component: () => import("@/components/Test.vue"),
             meta: {
@@ -85,7 +67,7 @@ const routes = [
           },
           {
             path: "/parts-requests",
-            component: () => import("@/pages/PartsRequestsPage.vue"),
+            component: () => import("@/pages/PartRequestsPage.vue"),
             meta: {
               requiresAuth: true,
               roles: ["admin", "warehouse_operator", "mechanic"],
