@@ -8,6 +8,7 @@ import { useEmployeeStore } from "@/stores/useEmployeeStore";
 import { storeToRefs } from "pinia";
 import { api } from "@/service/apiInstance";
 import { getErrorMessage } from "@/utils/getErrorMessage";
+import { formatDate } from "@/utils/formatDate";
 
 // Данные пользователяavatarPreview
 const userStore = useUserStore();
@@ -347,13 +348,17 @@ console.log(userData.value);
                 <label class="text-xs text-(--placeholder) uppercase"
                   >Дата регистрации</label
                 >
-                <p class="text-(--text) font-medium">—</p>
+                <p class="text-(--text) font-medium">
+                  {{ userData.createdAt ? formatDate(userData.createdAt) : "—" }}
+                </p>
               </div>
               <div>
                 <label class="text-xs text-(--placeholder) uppercase"
                   >Последний вход</label
                 >
-                <p class="text-(--text) font-medium">—</p>
+                <p class="text-(--text) font-medium">
+                  {{ userData.lastLogin ? formatDate(userData.lastLogin) : "—" }}
+                </p>
               </div>
             </div>
           </div>

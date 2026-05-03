@@ -27,6 +27,8 @@ export type EmployeeStatus =
 export interface Employee extends UserI {
   phone?: string;
   avatar?: string;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export type EmployeeForm = Omit<Employee, "id" >;

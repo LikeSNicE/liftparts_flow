@@ -24,6 +24,7 @@ export const useUserStore = defineStore("user", () => {
         },
       });
 
+      console.log("User data from server:", data);
       userData.value = data;
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(data));
     } catch (error: unknown) {
