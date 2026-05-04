@@ -239,8 +239,7 @@ onMounted(() => {
       <div class="bg-blue-50 p-3 rounded-lg">
         <p class="text-sm text-blue-700">
           <i class="pi pi-info-circle mr-2"></i>
-          Заявка будет отправлена на склад для обработки. Вы получите
-          уведомление о статусе заявки.
+          Заявка будет отправлена на склад для обработки.
         </p>
       </div>
     </div>
