@@ -64,13 +64,18 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
           updatedRequest,
         );
 
-        const index = partsRequestList.value.findIndex((r) => r.id === requestId);
+        const index = partsRequestList.value.findIndex(
+          (r) => r.id === requestId,
+        );
         if (index !== -1) {
           partsRequestList.value[index] = data;
         }
       } catch (error: unknown) {
         const errorMessage = getErrorMessage(error);
-        console.error("Error updating request to in_progress:", errorMessage.message);
+        console.error(
+          "Error updating request to in_progress:",
+          errorMessage.message,
+        );
         throw new Error("Не удалось взять заявку в работу.");
       }
     }
@@ -81,30 +86,33 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
     const request = partsRequestList.value.find((r) => r.id === requestId);
     if (request && request.status === "in_progress") {
       try {
-        
         // 1. Проверяем наличие всех запчастей на складе
         for (const part of request.parts) {
-          const { data: warehousePart } = await api.get(`/parts/${part.partId}`);
-          
+          const { data: warehousePart } = await api.get(
+            `/parts/${part.partId}`,
+          );
+
           if (!warehousePart) {
             throw new Error(`Запчасть "${part.partName}" не найдена на складе`);
           }
-          
+
           if (warehousePart.quantity < part.quantity) {
             throw new Error(
               `Недостаточно запчастей "${part.partName}". ` +
-              `Запрошено: ${part.quantity}, доступно: ${warehousePart.quantity}`
+                `Запрошено: ${part.quantity}, доступно: ${warehousePart.quantity}`,
             );
           }
         }
 
         // 2. Уменьшаем количество запчастей на складе
         for (const part of request.parts) {
-          const { data: warehousePart } = await api.get(`/parts/${part.partId}`);
+          const { data: warehousePart } = await api.get(
+            `/parts/${part.partId}`,
+          );
           const newQuantity = warehousePart.quantity - part.quantity;
 
           await api.patch(`/parts/${part.partId}`, {
-            quantity: newQuantity
+            quantity: newQuantity,
           });
         }
 
@@ -126,7 +134,9 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
           updatedRequest,
         );
 
-        const index = partsRequestList.value.findIndex((r) => r.id === requestId);
+        const index = partsRequestList.value.findIndex(
+          (r) => r.id === requestId,
+        );
         if (index !== -1) {
           partsRequestList.value[index] = data;
         }
@@ -141,7 +151,10 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
   // Отклонить заявку
   const rejectRequest = async (requestId: number, reason: string) => {
     const request = partsRequestList.value.find((r) => r.id === requestId);
-    if (request && (request.status === "pending" || request.status === "in_progress")) {
+    if (
+      request &&
+      (request.status === "pending" || request.status === "in_progress")
+    ) {
       const updatedRequest: PartsRequest = {
         ...request,
         status: "rejected",
@@ -155,7 +168,9 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
           updatedRequest,
         );
 
-        const index = partsRequestList.value.findIndex((r) => r.id === requestId);
+        const index = partsRequestList.value.findIndex(
+          (r) => r.id === requestId,
+        );
         if (index !== -1) {
           partsRequestList.value[index] = data;
         }
@@ -183,7 +198,9 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
           updatedRequest,
         );
 
-        const index = partsRequestList.value.findIndex((r) => r.id === requestId);
+        const index = partsRequestList.value.findIndex(
+          (r) => r.id === requestId,
+        );
         if (index !== -1) {
           partsRequestList.value[index] = data;
         }
@@ -238,10 +255,22 @@ export const usePartsRequestStore = defineStore("partsRequest", () => {
   };
 
   // Удалить заявку
-  const deleteRequest = (requestId: number) => {
-    const index = partsRequestList.value.findIndex((r) => r.id === requestId);
-    if (index !== -1) {
-      partsRequestList.value.splice(index, 1);
+  const deleteRequest = async (requestId: number) => {
+    try {
+
+      await api.delete(`/parts-requests/${requestId}`);
+
+
+      partsRequestList.value = partsRequestList.value.filter(
+        (r) => r.id !== requestId,
+      );
+
+      
+    } catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);  
+      console.error(errorMessage.message);
+      throw new Error("Не удалось удалить заявку по запчастям.");
+      
     }
   };
 

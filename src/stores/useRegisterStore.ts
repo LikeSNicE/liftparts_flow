@@ -38,7 +38,8 @@ export const useRegisterStore = defineStore("register", () => {
       userrole: userrole.value,
       password: password.value,
       middlename: middlename.value || undefined,
-      status: "inactive", // Новый пользователь по умолчанию имеет статус "неактивный",
+      status: "inactive", // Новый пользователь по умолчанию имеет статус "неактивный"
+      createdAt: new Date().toISOString(),
     };
 
     try {
@@ -63,9 +64,7 @@ export const useRegisterStore = defineStore("register", () => {
     userrole,
     password,
     roles,
-
     middlename,
-
     registerUser,
   };
 });

@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { fn } from 'storybook/test'
+// import { fn } from 'storybook/test'
 import Header from './Header.vue'
 import { useRouter } from 'vue-router'
-import { useModalStore } from '@/stores/useModalStore'
+// import { useModalStore } from '@/stores/useModalStore'
 
 /**
  * Компонент Header отображает заголовок страницы и опциональную кнопку создания.

@@ -7,6 +7,7 @@ export interface UserI {
   password?: string;
   middlename?: string;
   status: EmployeeStatus;
+  createdAt?: string;
 }
 
 // Основная роль - mechanic, остальные (admin, warehouse_operator) добавляются через БД
@@ -27,7 +28,6 @@ export type EmployeeStatus =
 export interface Employee extends UserI {
   phone?: string;
   avatar?: string;
-  createdAt?: string;
   lastLogin?: string;
 }
 

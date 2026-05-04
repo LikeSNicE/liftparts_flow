@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "confirm", quantity: number): void;
+  (e: "confirm", data: { quantity: number; reason: string; comment: string }): void;
 }>();
 
 const quantity = ref(1);
@@ -35,7 +35,11 @@ const isQuantityValid = computed(() => {
 
 const handleConfirm = () => {
   if (isQuantityValid.value && reason.value.trim()) {
-    emit("confirm", quantity.value);
+    emit("confirm", {
+      quantity: quantity.value,
+      reason: reason.value,
+      comment: comment.value
+    });
     emit("close");
   }
 };

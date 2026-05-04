@@ -82,6 +82,10 @@ const openEditModal = (request: PartsRequest) => {
   modalStore.openModal("editPartsRequest");
 };
 
+const handleDeleteRequest = async (requestId: number) => {
+  await partsRequestStore.deleteRequest(requestId);
+};
+
 onMounted(() => partsRequestStore.getPartsRequests());
 </script>
 
@@ -142,13 +146,22 @@ onMounted(() => partsRequestStore.getPartsRequests());
 
       <!-- Кастомизируем ячейку действий -->
       <template #cell-actions="{ item }">
-        <Button
-          @click.stop="openEditModal(item)"
-          label="Просмотр"
-          severity="success"
-          type="button"
-          size="small"
-        />
+        <div class="flex gap-2">
+          <Button
+            @click.stop="openEditModal(item)"
+            label="Просмотр"
+            severity="success"
+            type="button"
+            size="small"
+          />
+          <Button
+            @click.stop="handleDeleteRequest(item.id)"
+            label="Удалить"
+            severity="danger"
+            type="button"
+            size="small"
+          />
+        </div>
       </template>
 
       <!-- Кастомное пустое состояние -->
@@ -197,13 +210,22 @@ onMounted(() => partsRequestStore.getPartsRequests());
       </template>
 
       <template #list-actions="{ item }">
-        <Button
-          @click.stop="openEditModal(item)"
-          severity="success"
-          type="button"
-          size="small"
-          icon="pi pi-eye"
-        />
+        <div class="flex gap-2">
+          <Button
+            @click.stop="openEditModal(item)"
+            severity="success"
+            type="button"
+            size="small"
+            icon="pi pi-eye"
+          />
+          <Button
+            @click.stop="handleDeleteRequest(item.id)"
+            severity="danger"
+            type="button"
+            size="small"
+            icon="pi pi-trash"
+          />
+        </div>
       </template>
     </List>
   </Card>

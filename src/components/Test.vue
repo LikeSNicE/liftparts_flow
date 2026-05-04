@@ -4,11 +4,11 @@ import { api } from "@/service/apiInstance";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { getErrorMessage } from "@/utils/getErrorMessage";
 import { ref } from "vue";
-import { type User } from "@/types/UserTypes";
+import { type UserI } from "@/types/UserTypes";
 
 const authStore = useAuthStore();
 
-const userData = ref<User | null>(null);
+const userData = ref<UserI | null>(null);
 
 onMounted(async () => {
   try {

@@ -132,7 +132,7 @@ watch(
 
 onMounted(async () => {
   window.addEventListener("message", handleMapMessage);
-  await requestStore.getRequests();
+  await requestStore.getRepairRequests();
   await loadMonitorRequests();
   syncRequestsToMap();
 });

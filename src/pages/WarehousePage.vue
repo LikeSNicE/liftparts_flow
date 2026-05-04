@@ -61,6 +61,7 @@ const openIncomeModal = (part: Part) => {
   modalStore.openModal("warehouseIncome");
 };
 
+
 const openWriteOffModal = (part: Part) => {
   selectedPart.value = part;
   isWriteOffModalVisible.value = true;
@@ -68,28 +69,32 @@ const openWriteOffModal = (part: Part) => {
 
 // Обработчики операций
 
-const handleWriteOff = (quantity: number) => {
+const handleWriteOff = async (data: { quantity: number; reason: string; comment: string }) => {
   if (selectedPart.value) {
-    const part = warehouseParts.value.find(
-      (p) => p.id === selectedPart.value!.id,
-    );
-    if (part && part.quantity >= quantity) {
-      part.quantity -= quantity;
+    try {
+      const newQuantity = selectedPart.value.quantity - data.quantity;
+      await partsStore.updatePart(selectedPart.value.id, {
+        quantity: newQuantity
+      });
+      isWriteOffModalVisible.value = false;
+    } catch (error) {
+      console.error("Ошибка при списании запчасти:", error);
     }
   }
-  isWriteOffModalVisible.value = false;
 };
 
-const handleIssue = (quantity: number) => {
+const handleIssue = async (quantity: number) => {
   if (selectedPart.value) {
-    const part = warehouseParts.value.find(
-      (p) => p.id === selectedPart.value!.id,
-    );
-    if (part && part.quantity >= quantity) {
-      part.quantity -= quantity;
+    try {
+      const newQuantity = selectedPart.value.quantity - quantity;
+      await partsStore.updatePart(selectedPart.value.id, {
+        quantity: newQuantity
+      });
+      isIssueModalVisible.value = false;
+    } catch (error) {
+      console.error("Ошибка при выдаче запчасти:", error);
     }
   }
-  isIssueModalVisible.value = false;
 };
 
 onMounted(() => partsStore.getParts());
