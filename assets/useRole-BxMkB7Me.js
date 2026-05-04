@@ -1,1 +1,0 @@
-import{o as e}from"./runtime-core.esm-bundler-BDY7aM12.js";import{i as t}from"./index-C-iVZpP6.js";function n(){let n=t(),r=e(()=>n.userData?.userrole||null),i=e=>r.value?Array.isArray(e)?e.includes(r.value):r.value===e:!1;return{userRole:r,hasRole:i,can:e=>i(e)}}export{n as t};
