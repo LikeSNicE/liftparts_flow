@@ -1,1 +1,0 @@
-import{a as e}from"./getErrorMessage-DS922rtp.js";import{G as t,o as n}from"./runtime-core.esm-bundler-BDY7aM12.js";var r=e(`auth`,()=>{let e=t(localStorage.getItem(`token`));return{token:e,setToken:t=>{e.value=t,localStorage.setItem(`token`,t)},clearToken:()=>{e.value=null,localStorage.removeItem(`token`)},isAuthenticated:n(()=>!!e.value)}});export{r as t};
